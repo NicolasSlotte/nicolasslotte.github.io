@@ -1,0 +1,29 @@
+h1:introduction Introduction
+h1:methods Methods
+h2:motivation-and-definitions Motivation and definitions
+h2:image-aquisition Image aquisition
+h2:image-processing Image processing
+h3:importation Importation
+h3:conversion Conversion
+fig:results Overview of the first four matrices of each category. Colors suggested by O.Schmit
+h3:cleaning Cleaning
+fig:results Overview of the first eight cleaned matrices of each category.
+h2:variable-extraction Variable extraction
+h3:surface Surface
+fig:results Bean surfaces by coffee type.
+fig:results Density of bean surfaces by coffee type.
+tab:results Surface mean and standard deviation by bean type.
+h3:color Color
+fig:results Bean colors by coffee type
+fig:results Density of bean colors by coffee type.
+tab:results Color mean and standard deviation by bean type.
+h1:classification Classification
+fig:results Bean surfaces as a function of they average color internsity.
+h2:logistic-regression Logistic regression
+fig:results Bean surfaces as a function of they average color internsity.
+h2:accuracy-scores Accuracy scores
+tab:results Confusion matrix (actual versus predicted)
+tab:results Accuracy Scores
+h1:conclusion Conclusion
+h1:ressources Ressources
+

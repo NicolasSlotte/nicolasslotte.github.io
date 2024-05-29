@@ -1,0 +1,786 @@
+---
+title: "Coffee Beans Classification"
+subtitle: "An attempt to image acquisition, classification and processing using RVision"
+author: "Nicolas Slotte"
+date: "First Iteration | February - May 2024"
+output:
+  bookdown::html_document2:
+    number_sections: true
+    css: "justify.css"
+    code_folding: hide
+    toc: true
+    toc_depth: 2
+    toc_float: true
+---
+
+```{r setup, results = FALSE, message = FALSE, warning = FALSE}
+
+# Initiate
+
+rm(list = ls())
+
+# Packages
+
+library(bookdown)
+library(tidyverse)
+library(Rvision)
+library(stringr)
+library(caret)
+library(kableExtra)
+
+```
+
+# Introduction
+
+For coffee nerds, the investigation of various coffee tastes using different brewing techniques and bean types can be an exciting hobby. In some cases, the differences in bean aesthetics between some coffee types can be easily spotted at first glance. As in some cases we are able to quickly segregate beans based solely on their aesthetics, the main question driving project is the following: Based on a selection of bean images, could we build a program capable of predicting a bean type as accurately as we can? This document summarizes the development of an image processing tool in R designed to perform an automatic image classification of two different types of coffee beans.
+
+
+# Methods
+
+## Motivation and definitions
+
+Our motivation is the following: Based on bean aesthetics predictors extracted from a ensemble of images, could we build a statistical model capable of accurately predicting a bean type. To address this question, we started simple by selecting two groups of beans with distinct visual features. The first feature being the size (wider and narrower beans) and the second being the color (darker and lighter beans). As the purpose of this project was not to use dimension reduction techniques, we established that this variable selection was a fair assumption to start with.
+
+On this basis, our goal is to build a supervised model that takes a feature as input and returns a prediction of the outcome when we don't know the outcome. Our approach will be to (i) build a reliable dataset (ii) train a model using a labeled data partition (iii) apply this model on an unlabeled data partition to make prediction and then (iv) assess the model accuracy by comparing the predictions and the actual outcomes retrieved from the unlabeled data partition.
+
+We will use $Y$ to denote the outcome (group 1, group 2) and $X_1$, $X_2$ to denote the features (size and color). In this case, the outcome $Y$ is categorical and the $K$ classes can be denoted $k = 0, 1$.
+
+Hence, our conditional probability for each class $k$ can be defined as
+
+$$
+Pr(Y = k \ | \ X_1 = x_1, X_2 = x_2), for \ k = 0, 1 \tag {1}
+$$
+
+A total of 200 coffee beans where gathered. The first group consists of a hundred beans of Douwe Egberts Dessert (hereafter "DED") purchased in a supermarket, and the second group consists of a hundred beans of Ethiopia GUJI Natural (hereafter "EGN") purchased in a fancy coffee shop. As we suspect one of the predictors will be the size, we took care to homogenize each batch in order to minimize a granulometry based fractionation before sampling. In figure 2.1, we can see that the DED beans seem larger and darker than most of the EGN beans.
+
+```{r, echo=FALSE, fig.align="center", out.width="50%", fig.cap="DED beans (left) and EGN beans (right) sampled."}
+
+knitr::include_graphics("C:/Data/Privé/IdeasForScienceProjects/Introduction to Machine Learning/drive-download-20240320T152421Z-001/IMG_20240211_193848_2.jpg")
+
+```
+
+## Image aquisition
+
+In order to obtain a precise estimate of the size and color of each coffee bean, the first step consisted in getting individual high resolution images of the sampled beans. No matter how sophisticated our future model can be, if we feed it mediocre data, the predictions will be sketchy at best.
+
+To obtain higher quality images, we built a setup using a magnitude 10 NEOC binocular (c.f. Figure 2.2) wired to an unbranded 1080p USB camera mounted onto a tripod. We selected one unique DED bean to fine tune the resolution, light intensity and camera alignment using a rule of thumb. As we are looking for differences between bean types, the optimal tuning parameters would be the ones that maximizes those optical differences. For instance, the best lighting tuning would resemble an bell shaped optimization function where the optimal intensity would lie between (i) too bright so that we have a ceiling effect that reduce the variability in the clear range (ii) too dark so that we have a floor effect that reduce the variability in the dark range. As we have no prior knowledge regarding the color range of maximum variability between bean types, our first optical tuning is essentially a rough visual appreciation. Once calibrated, the optics and lighting specifications were kept constant in order to avoid adding a systematic bias to the images. Each bean was placed individually under the binocular using tweezers for image acquisition. 
+
+
+```{r, echo=FALSE, fig.align="center", out.width="30%", fig.cap="NEOC binocular used for magnification."}
+
+image <- "C:/Data/Privé/IdeasForScienceProjects/Introduction to Machine Learning/drive-download-20240320T152421Z-001/IMG_20240320_170555.jpg"
+knitr::include_graphics(image)
+
+```
+
+## Image processing
+
+Once the bean images were successfully rendered, the next step consisted in cleaning those images. The approach we used was the following: 1. Import all the images into an R environment 2. Convert the images into R objects and reduce their dimension to work with lighter objects 3. Isolate the bean from the background, since only ~ 20% of each image contains the actual bean.
+
+### Importation
+
+We imported all the images names stored into the root images folder (*file.names* variable). Once the *.jpg* extensions were removed from the files names and stored into a separate vector (*clean_names* variable), we looped through all the files names, loaded the files as images using the function *image* from the RVision package and assigned the cleaned names using the *assign* function. We also extracted the category of each image (DED or EGN) and stored the results into the vector *outcomes*. For instance, the figure 2.3 shows the first DED bean image loaded into our R environment.
+
+```{r, results = 'asis', include = TRUE, warning = FALSE, fig.align = "center", out.width = '70%'}
+
+# extract the file names, images names and categories
+
+path <- "C:/Data/Privé/IdeasForScienceProjects/Introduction to Machine Learning/grains/"
+
+file.names <- list.files(path = path, pattern="\\.jpg$", recursive = FALSE)
+file.names <- file.names[1:length(file.names)-1]
+clean_names <- str_sub(file.names, end = -5)
+outcomes <- str_split_i(clean_names, pattern = "_", i = 1)
+
+# load the images and assign their names
+
+for (i in 1:length(file.names)) {
+  
+  name <- file.names[i]
+  full_dir <- file.path(path, name)
+  im <- image(filename = full_dir)
+  
+  name_clean <- str_sub(name, end = -5)
+  name_clean
+  assign(name_clean, im)
+  
+}
+
+```
+
+
+```{r, echo=FALSE, fig.align="center", out.width="50%", fig.cap="Image of the first DED bean."}
+
+image <- "C:/Data/Privé/IdeasForScienceProjects/Introduction to Machine Learning/grains/ded_1.jpg"
+knitr::include_graphics(image)
+
+```
+
+### Conversion
+
+A digital image consists of a gridded frame where each pixel stores an intensity value between 0 (minimum intensity value = black) and 255 (maximum intensity value = white). For instance, a black and white image of dimension 28x28 pixels will be stored in R as an array of dimension 28 28 1. On the other hand, colored images are multichannel gridded frames, where each red, green and blue channel store a gridded frame which contains the intensity values for that specific color. Hence, for colored images, the dimensions of the R array is 28 28 3.
+
+The dimensions of the images imported into our R environment are to large to perform fast manipulations. We reduced the overall dimension of each image going from `r dim(ded_1)[1]` `r dim(ded_1)[2]` `r dim(ded_1)[3]` to 100 100 1. To achieve this transformation, we 1. stored all the images into one single R object to facilitate the data manipulation using a loop 2. defined the final dimension desired for our images (*dim* variable) 3. changed the color space to gray using the function *changeColorSpace* so that we can focus on only one color channel 4. cut the useless part of the images not containing the beans in order to have a square format 5. rescaled our 1080 1080 1 images to 100 100 1 using the function *resize* 6. converted our RVision images into matrices 7. stored the matrices into a array.
+
+```{r, results = 'asis', include = TRUE}
+
+# stores the images into a list
+
+x = list()
+for (i in 1:length(clean_names)) {
+  x[[i]] = get(clean_names[i])
+}
+
+# pixel reduction
+
+dim <- 100
+for (i in 1:length(x)) {
+  
+  x[[i]] <- changeColorSpace(x[[i]], "GRAY") # gray
+  x[[i]] <- image(x[[i]][c(0:1080), c(500:1580) , ]) # cut
+  x[[i]] <- resize(x[[i]], dim, dim, interpolation = "linear") # rescale
+  x[[i]] <- as.matrix(as.data.frame(as.matrix(x[[i]]))) # reduce matrix dimension
+  
+}
+
+# fill an empty array with the matrices from the list
+
+x_ <- array(NA, dim = c(length(x), dim, dim))
+for (i in 1:length(x)) {
+  x_[i, , ] <- x[[i]]
+}
+
+```
+
+The dimension of the array created is `r dim(x_)[1]` `r dim(x_)[2]` `r dim(x_)[3]`. `r dim(x_)[1]` being the number of matrices and `r dim(x_)[2]` `r dim(x_)[3]` being the number of lines and columns of each matrix. Now that the images are correctly imported and formatted as matrices, we can convert them into data frames and plot the corresponding images using ggplot.
+
+```{r, results = 'asis', include = TRUE, warning = FALSE, fig.cap="Overview of the first four matrices of each category. Colors suggested by O.Schmit", fig.align="center", out.width='90%'}
+
+# list the bean names for plot
+
+list_for_plot <- c("ded_1",
+                   "ded_2",
+                   "ded_3",
+                   "ded_4",
+                   "egn_1",
+                   "egn_2",
+                   "egn_3",
+                   "egn_4")
+
+index <- clean_names %in% list_for_plot
+data <- x_[index, , ]
+
+# format the matrices into tidy data frames
+
+gg_images <- data.frame()
+for (i in 1:dim(data)[1]) {
+  
+  image <- as.data.frame(data[i, , ])
+  colnames(image) <- seq_len(ncol(image))
+  image$y <- seq_len(nrow(image))
+  image <- gather(image, "x", "value", -y)
+  image$x <- as.integer(image$x)
+  image$image <- list_for_plot[i]
+  gg_images <- rbind(gg_images, image)
+  
+}
+
+# plot the data frames
+
+ggplot(gg_images, aes(x = x, y = y, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient(low = "blue", high = "orange", na.value = NA) +
+  facet_wrap(image ~ ., ncol = 2) +
+  theme_bw() +
+  theme(panel.grid = element_blank())   +
+  theme(aspect.ratio = 1)
+
+```
+
+### Cleaning
+
+The most challenging part of this project lies in the image cleaning. From these images alone, the predictors (bean size and color) cannot be directly extracted as most of the images surface contains irrelevant information such as (i) the black contour caused by the camera misalignment (ii) the white background caused by the binocular light reflection on the sampling surface and (iii) the shadow of the bean caused by the lighting tilt (c.f. Figures 2.3 and 2.4).
+
+In order to extract the beans from the images, we built a cleaning algorithm that consists in a multi-layered linear scanning loop that looks for breaking points in pixel intensity values, and replaces non-bean pixels with NA. For a defined image, the loop will select a column of pixels and verify how the difference in intensity value between a $pixel_p$ and the next pixel $pixel_{p+1}$ compares to a defined threshold. If the difference is lower than the threshold, we assume that it is not significant enough to be considered as a change in image domain. On the other hand, in case the difference is greater than the threshold, the position at which the difference is observed will be considered as a breaking point between two image domain, and the values observed prior to that point will be replaced by NA. Moreover, we added some features (e.g. addition of NAs filters as the more advanced layers work on depleted images; additional filters to refine the threshold detection; filtering layers etc.) in order to strengthen the process robustness to inter-domain intensity variability.
+
+The first layers are designed to find the threshold between the black contour and the white background; The second layers are designed to find the threshold between the white contour and the bean; And a third and fourth layers were designed to roughly remove unused section of the images. Details can be found in the portion of code below.
+
+To ease the cleaning, the shadows of the beans caused by the lighting tilt were kept as part of the beans in the first version of this algorithm. However, we do not expect it to introduce a significant bias due to its surface being directly proportional to the volume of the bean. Hence, it is likely that keeping that image portion for now will artificially increase the surface differences measured between beans.
+
+For each layer, the threshold values were defined by manual trials and errors. Our final algorithm works for most beans images. However, for less than 5% of the images, some minor residual artefacts are observed after the cleaning, which correspond to isolated 1 pixel wide columns not properly NA-replaced. Since these artefacts are limited in pixel count and occurrence, they were considered tolerable and no further filtering was performed at this point.
+
+Initially, the cleaning algorithm was executed remotely using the *script* function to simplify the code. But we embedded its contents into a loop for reporting purposes.
+
+
+```{r, results = 'hide', include = TRUE, warning = FALSE}
+
+# empty array for clean matrices
+
+x_clean <- array(NA, dim = c(dim(x_)[1], dim, dim))
+  
+for (image in 1:dim(x_)[1]) {
+  
+  im <- t(x_[image, , ])
+  
+  # Coffee cleaning function
+  # detour the coffee beans and replace the invalid space by NA
+  
+  ## First layer ####
+  
+  ### First layer - left ####
+  
+  bw_diff <- 50 # first threshold
+  for (lindex in 1:dim(im)[1]) {
+    
+    # extract one line
+    line <- im[lindex, ]
+    trash <- replicate(n = length(line), TRUE)
+    
+    # find a differential
+    for (position in 1:(length(line) - 1)) {
+      first_value <- line[position]
+      second_value <- line[position + 1]
+      
+      # presence of NAs?
+      if (is.na(second_value - first_value)) {}
+      
+      else {
+      
+        if (sqrt((second_value - first_value)^2) >= bw_diff) {
+          trash <- replace(x = trash, list = 1:(position + 1), values = FALSE)
+          break
+        } else {}
+      }
+    }
+    
+    line <- replace(line, list = which(trash == FALSE), values = NA)
+    im[lindex, ] <- line
+    
+  }
+  
+  
+  ### First layer - right ####
+  
+  bw_diff <- 50 # first threshold
+  for (lindex in 1:dim(im)[1]) {
+    
+    # extract one line
+    line <- im[lindex, ]
+    trash <- replicate(n = length(line), TRUE)
+    
+    # find a differential
+    for (position in (length(line)):2) {
+      first_value <- line[position]
+      second_value <- line[position - 1]
+      
+      # presence of NAs?
+      if (is.na(second_value - first_value)) {}
+      
+      else {
+      
+        if (sqrt((second_value - first_value)^2) >= bw_diff) {
+          
+          # trash only if first value is not the black corner
+          # otherwise, we are doing the second layer job.
+          if (line[length(line)] < 200) {
+            trash <- replace(x = trash, list = length(line):(position - 1), values = FALSE)
+          } else {
+            break
+          }
+          break
+        } else {}
+      }
+    }
+    
+    line <- replace(line, list = which(trash == FALSE), values = NA)
+    im[lindex, ] <- line
+    
+  }
+  
+  
+  ## Side layer - topbottom ####
+  
+  # roughly cut the edges
+  
+  edge_left <- 1:10
+  edge_right <- 90:100
+  
+  im[edge_left, ] <- NA
+  im[edge_right, ] <- NA
+  
+  
+  ## Second Layer ####
+  
+  ### Second layer - left ####
+  
+  bw_diff <- 10 # second, sensitive threshold
+  for (lindex in 1:dim(im)[1]) {
+    
+    # extract one line
+    line <- im[lindex, ]
+    trash <- replicate(n = length(line), TRUE)
+    
+    # find a differential
+    for (position in 1:(length(line) - 1)) {
+      
+      first_value <- line[position]
+      second_value <- line[position + 1]
+      third_value <- line[position + 2]
+      fourth_value <- line[position + 3]
+      
+      # presence of NAs?
+      if (any(is.na(c(first_value, 
+                      second_value, 
+                      third_value,
+                      fourth_value)))) {}
+      
+      else {
+        
+        if (sqrt((second_value - first_value)^2) >= bw_diff & 
+            third_value < 220 &
+            fourth_value < 220) {
+          trash <- replace(x = trash, list = 1:(position + 1), values = FALSE)
+          break
+        } else {}
+      }
+    }
+    
+    line <- replace(line, list = which(trash == FALSE), values = NA)
+    im[lindex, ] <- line
+    
+  }
+  
+  
+  ### Second layer - right ####
+  
+  bw_diff <- 10 # second, sensitive threshold
+  for (lindex in 1:dim(im)[1]) {
+    
+    # extract one line
+    line <- im[lindex, ]
+    trash <- replicate(n = length(line), TRUE)
+    
+    # find a differential
+    for (position in (length(line)):2) {
+      
+      first_value <- line[position]
+      second_value <- line[position - 1]
+      third_value <- line[position - 2]
+      fourth_value <- line[position - 3]
+      
+      # presence of NAs?
+      if (any(is.na(c(first_value, 
+                      second_value,
+                      third_value,
+                      fourth_value)))) {}
+      
+      else {
+        
+        if (sqrt((second_value - first_value)^2) >= bw_diff &
+            third_value < 220 &
+            fourth_value < 220) {
+          trash <- replace(x = trash, list = length(line):(position - 1), values = FALSE)
+          break
+        } else {}
+      }
+    }
+    
+    line <- replace(line, list = which(trash == FALSE), values = NA)
+    im[lindex, ] <- line
+    
+  }
+  
+  ## Third layer - mustache ####
+  
+  for (lindex in 1:dim(im)[1]) {
+    
+    line <- im[lindex, ]
+    line_strip <- line[!is.na(line)]
+    
+    if (length(line_strip) >= 1) {
+      
+      ra <- range(line_strip)
+      if (ra[1] > 170 & ra[2] > 170) {
+        im[lindex, ] <- replicate(100, NA)
+      } else {}
+      
+    } else {}
+    
+  }
+  
+  cat("Bean N°", image, "processed sucessfully! \n")
+  x_clean[image, , ] <- im
+  
+}
+
+```
+
+The figure 2.5 shows the first eight cleaned images of each bean category.
+
+```{r, results = 'asis', include = TRUE, warning = FALSE, fig.cap="Overview of the first eight cleaned matrices of each category.", fig.align="center", out.width='90%'}
+
+# list the bean names for plot
+
+list_for_plot <- c("ded_1",
+                   "ded_2",
+                   "ded_3",
+                   "ded_4",
+                   "ded_5",
+                   "ded_6",
+                   "ded_7",
+                   "ded_8", 
+                   "egn_1",
+                   "egn_2",
+                   "egn_3",
+                   "egn_4",
+                   "egn_5",
+                   "egn_6",
+                   "egn_7",
+                   "egn_8")
+
+
+index <- clean_names %in% list_for_plot
+data <- (x_clean[index, , ])
+
+# format the matrices into tidy data frames
+
+gg_images <- data.frame()
+for (i in 1:dim(data)[1]) {
+  
+  image <- as.data.frame(data[i, , ])
+  colnames(image) <- seq_len(ncol(image))
+  image$y <- seq_len(nrow(image))
+  image <- gather(image, "x", "value", -y)
+  image$x <- as.integer(image$x)
+  image$image <- list_for_plot[i]
+  gg_images <- rbind(gg_images, image)
+  
+}
+
+# plot the data frames
+
+ggplot(gg_images, aes(x = y, y = x, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient(low = "blue", high = "orange", na.value = NA) +
+  facet_wrap(image ~ ., ncol = 4) +
+  
+  theme_bw() +
+  theme(panel.grid = element_blank())   +
+  theme(aspect.ratio = 1) +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()) +
+  ylab("") +
+  xlab("")
+
+```
+
+## Variable extraction
+
+Now that our dataset contains bean-only images, we can start extracting the predictors.
+
+### Surface
+
+We define the bean size as the surface of the image covered by the bean (size and surface are considered the same variable in this case).
+
+$$
+Surface_b = \sum_{i = 1}^{n} pixel_i \tag {2}
+$$
+$$
+\forall \ pixel \ \in \ bean
+$$
+
+The surfaces were extracted from the cleaned images by flattening the matrices and removing they NA values. The results were then stored into a dataframe. The figures 2.6 and 2.7 show the surfaces distributions for the two bean types. Comparing these surfaces distribution, we observe that the DED beans feature a higher average surface and higher variability compared to the EGN beans, as summarized in table 2.1.
+
+```{r, results = 'asis', include = TRUE, warning = FALSE, fig.cap="Bean surfaces by coffee type.", fig.align="center", out.width='80%'}
+
+# surface
+
+surface <- data.frame()
+
+for (i in 1:dim(x_clean)[1]) {
+  
+  bean <- x_clean[i, , ]
+  bean <- c(bean)
+  bean <- bean[!is.na(bean)]
+  
+  ds <- data.frame(surface = length(bean), 
+                   name = clean_names[i],
+                   type = outcomes[i])
+  
+  surface <- rbind(surface, ds)
+  
+}
+
+ggplot(data = surface, aes(y = surface, x = type, col = type)) +
+  geom_jitter(width = 0.1, alpha = 0.6) +
+  theme_bw() +
+  labs(y = "Surface (pixel count)", x = "Coffee type")
+```
+
+```{r, results = 'asis', include = TRUE, warning = FALSE, fig.cap="Density of bean surfaces by coffee type.", fig.align="center", out.width='80%'}
+
+# surface distribution
+
+ggplot(data = surface, aes(x = surface, col = type)) + 
+  geom_density() +
+  theme_bw() +
+  labs(y = "Density", x = "Surface (pixel count)")
+```
+
+```{r, results = 'asis', include = TRUE, warning = FALSE}
+
+# surface summary
+
+tbl <- surface %>% group_by(type) %>%
+  summarise(mean = mean(surface),
+            std = sd(surface)) %>%
+  mutate_if(is.numeric, round, digits = 1)
+
+knitr::kable(tbl,
+             format = "html",
+             row.names = FALSE,
+             caption = "Surface mean and standard deviation by bean type.",
+             col.names = c("Coffee type", "Mean", "Std")) %>%
+  kable_classic(full_width = F,
+                font_size = 14,
+                html_font = "sans-serif")
+
+```
+
+### Color
+
+We define the bean color as the average of its intensity values.
+
+$$
+Color_b = \frac{1}{n}  \sum_{i = 1}^{n} pixel \ intensity_i \tag {3}
+$$
+
+$$
+\forall \ pixel \ \in \ bean
+$$
+
+Similarly to the surface predictor, the color was extracted by flattening the matrices, removing they NA values, and storing the results into a dataframe. The figures 2.8 and 2.9 show the color distributions for the two bean types. We observe that the DED beans feature a lower color intensity compared to the EGN beans, as summarized in table 2.2.
+
+```{r, results = 'asis', include = TRUE, warning = FALSE, fig.cap="Bean colors by coffee type", fig.align="center", out.width='80%'}
+
+# color
+
+colors <- data.frame()
+
+for (i in 1:dim(x_clean)[1]) {
+  
+  bean <- x_clean[i, , ]
+  bean <- bean[!is.na(bean)]
+  
+  ds <- data.frame(name = clean_names[i],
+                   type = outcomes[i],
+                   intensity = mean(bean))
+  
+  colors <- rbind(colors, ds)
+}
+
+ggplot(data = colors, aes(y = intensity, x = type, col = type)) + 
+  geom_jitter(width = 0.1, alpha = 0.6) +
+  theme_bw() +
+  labs(y = "Color intensity (0 to 255)", x = "Coffee type")
+
+
+```
+```{r, results = 'asis', include = TRUE, warning = FALSE, fig.cap="Density of bean colors by coffee type.", fig.align="center", out.width='80%'}
+
+# color distribution
+
+ggplot(data = colors, aes(x = intensity, col = type)) + 
+  geom_density() +
+  theme_bw() +
+  labs(y = "Density", x = "Color intensity (0 to 255)")
+```
+
+```{r, results = 'asis', include = TRUE, warning = FALSE, fig.align="center", out.width='80%'}
+
+# color summary
+
+tbl <- colors %>% group_by(type) %>%
+  summarise(mean = mean(intensity),
+            std = sd(intensity)) %>%
+  mutate_if(is.numeric, round, digits = 1)
+
+knitr::kable(tbl,
+             format = "html",
+             row.names = FALSE,
+             caption = "Color mean and standard deviation by bean type.",
+             col.names = c("Coffee type", "Mean", "Std")) %>%
+  kable_classic(full_width = F,
+                font_size = 14,
+                lightable_options = "basic",
+                html_font = "sans-serif")
+
+```
+
+# Classification
+
+Luckily, we are able to observe a difference in surface between the two coffee types, and an even greater difference in color! Our processed images capture that the DED beans are indeed wider and darker than the EGN beans. Plotting the predictors one as a function of the other shows a trend that defined the classification method selected (c.f. Figure 3.1).
+
+```{r, results = 'asis', include = TRUE, warning = FALSE, fig.cap="Bean surfaces as a function of they average color internsity.", fig.align="center", out.width='80%'}
+
+# surface vs color
+
+surfcol <- full_join(surface, colors, by = c("name", "type"))
+
+ggplot(surfcol, aes(y = surface, x = intensity, col = type)) +
+  geom_point() +
+  theme_bw() +
+  labs(y = "Surface (pixel count)", x = "Color intensity (0 to 255)")
+
+```
+
+## Logistic regression
+
+We initially intended to build and train a neural network on the images using *Tensorflow* which is available in R through the *Keras* package. However, based on this clear trend, we simply established a logistic regression to segregate the clusters.
+
+As our conditional probability is defined as
+
+$$
+\hat{p}(x_1, x_2) = Pr(Y = k \ | \ X_1 = x_1, X_2 = x_2) \tag{4}
+$$
+
+The model was built by fitting a boundary defined by the following decision rule. A linear boundary will segregate the two clusters based on a $0.5$ conditional probability of observing a DED bean as a function of $x_1$ and $x_2$.
+
+
+$$
+\hat{p}(x_1, x_2) = \hat{\beta}_0 + \hat{\beta}_1x_1 + \hat{\beta}_2x_2 = 0.5 \tag{5}
+$$
+
+$x_2$ can be expressed as a function of $x_1$ when plotting the regression line, which gives the following equations.
+
+$$
+x_2 = \frac{0.5 - \hat{\beta}_0 - \hat{\beta}_1x_1}{\hat{\beta}_2} \tag{6}
+$$
+
+$$
+SurfaceBoundary = \frac{0.5 - \hat{\beta}_0 - \hat{\beta}_1Intensity}{\hat{\beta}_2} \tag{7}
+$$
+
+Before fitting this model, we created two data partitions to avoid overfitting. Those partitions were created using the function *createDataPartition* from the *caret* package. The DED type was defined as the outcome $Y = 1$ and the EGN type as $Y = 0$. We first trained our model on a labeled data partition (*train_set*) and then applied it on an unlabeled data partition (*test_set*) to make predictions (*y_hat*). The coefficients $\hat{\beta}_0$, $\hat{\beta}_1$ and $\hat{\beta}_2$ were retrieved from the model and used to draw the segregation line defined in equation 7.
+
+```{r, results = 'asis', include = TRUE, warning = FALSE, fig.cap="Bean surfaces as a function of they average color internsity.", fig.align="center", out.width='80%'}
+
+# create a data partition
+
+test_index <- createDataPartition(y = surfcol$type, times = 1, p = 0.5, list = FALSE)
+
+test_set <- surfcol[test_index, ]
+train_set <- surfcol[-test_index, ]
+
+# build the model on the train set
+
+fit <- train_set %>%
+  mutate(y = ifelse(type == "ded", 1, 0)) %>%
+  lm(y ~ intensity + surface, data = .)
+
+# assess the model on the test set
+
+p_hat <- predict(fit, newdata = test_set)
+y_hat <- factor(ifelse(p_hat > 0.5, "ded", "egn"))
+
+# plot a segregation line
+
+surfcol$prob <- p_hat
+
+beta_0 <- fit$coefficients[1]
+beta_1 <- fit$coefficients[2]
+beta_2 <- fit$coefficients[3]
+
+surfcol <- surfcol %>% mutate(y_05 = (0.5 - beta_0 - beta_1*intensity)/beta_2)
+
+ggplot(surfcol, aes(y = surface, x = intensity, col = type)) +
+  geom_point() +
+  geom_line(aes(y = y_05,
+                x = intensity,
+                linetype = "p(Intensity, Surface) = 0.5"), 
+            col = "black") +
+  scale_linetype_manual(name = "boundary",
+                        values = c(2),
+                        guide = guide_legend(override.aes = list(color = c("black")))) +
+  theme_bw() +
+  labs(y = "Surface (pixel count)", x = "Color intensity (0 to 255)")
+
+```
+
+The regression line performed on the complete dataset shows an efficient segregation between the two bean types. At a first glance, we observe about only a few false predictions for the two bean types (c.f. Figure 3.2).
+
+## Accuracy scores
+
+The model accuracy was assessed by comparing the predictions (*y_hat*) and the actual outcomes retrieved from the unlabeled data partition (*test_set*) using the function *confusionMatrix* from the *caret* package (c.f. Table 3.1). Based on this comparison, we selected the following indicators to assess the model quality: Sensitivity, specificity, balanced accuracy and the $F_1$ score (c.f. Table 3.2).
+
+$$
+Sensitivity (TPR) = \frac{True_{DED}}{True_{DED} + False_{EGN}} = Pr(\hat{Y} = DED \ | \ Y = DED)\tag{8}
+$$
+
+$$
+Specificity (TNR) = \frac{True_{EGN}}{True_{EGN} + False_{DED}} = Pr(\hat{Y} = EGN \ | \ Y = EGN) \tag{9}
+$$
+
+
+$$
+Specificity (PPV) = \frac{True_{DED}}{True_{DED} + False_{DED}} = Pr(Y = DED \ | \ \hat{Y} = DED) \tag{10}
+$$
+
+$$
+BalancedAccuracy = \frac{sensitivity+specificity}{2} \tag{11}
+$$
+$$
+F_1Score = \frac{1}{\frac{\beta^2}{1+\beta^2} \frac{1}{TPR} + \frac{1}{1+\beta^2} \frac{1}{PPV}} \tag{12}
+$$
+
+In our case, since the sensitivity is as important as the specificity, the $\beta$ parameter of the $F_1Score$ is kept to its default value of 1.
+
+```{r, results = 'asis', include = TRUE, warning = FALSE, fig.align="center", out.width='80%'}
+
+# assess the model accuracy: confusion matrix
+
+cm <- confusionMatrix(data = y_hat, reference = factor(test_set$type))
+confmat <- cm$table
+
+knitr::kable(confmat,
+             format = "html",
+             row.names = TRUE, 
+             caption = "Confusion matrix (actual versus predicted)", 
+             col.names = c("Actual DED (Y = 1)", "Actual EGN (Y = 0)")) %>%
+  kable_classic(full_width = F,
+                font_size = 14,
+                lightable_options = "basic",
+                html_font = "sans-serif")
+```
+
+
+```{r, results = 'asis', include = TRUE, warning = FALSE, fig.align="center", out.width='80%'}
+
+# assess the model accuracy: scores
+
+tbl <- as.data.frame(cm$byClass) %>%
+  mutate_if(is.numeric, round, digits = 2)
+
+knitr::kable(tbl,
+             format = "html",
+             row.names = TRUE, 
+             caption = "Accuracy Scores", 
+             col.names = c("Scores")) %>%
+  kable_classic(full_width = F,
+                font_size = 14,
+                lightable_options = "basic",
+                html_font = "sans-serif")
+
+```
+
+# Conclusion
+
+To sum up this project, an $F_1Score$ of `r round(as.numeric(cm$byClass[c("F1")]), digits = 2)` as presented in table 3.2 is beyond expectations for this first iteration, and perfectly illustrate the capability of our model to segregate the two bean types selected. An interesting next step would be to (i) increase the number of predictors (e.g. reflectance, length over width ratio, RGB color channels, etc.) and perform different dimension reduction analysis (although it doesn't seem necessary considering the quality of our current model) (ii) increase the number of bean type and investigate if a clustering analysis would provide the same level of accuracy.
+
+# Ressources
+
+1. *Basic image classification*, https://tensorflow.rstudio.com/tutorials/keras/classification
+2. R.Irizarry, *Introduction to data science*, CRC Press, 2020, https://rafalab.dfci.harvard.edu/dsbook/
+3. *RVision - A computer vision library for R*, https://swarm-lab.github.io/Rvision/
