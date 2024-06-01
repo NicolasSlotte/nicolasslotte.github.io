@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Nicolas Slotte" />
+
+
+<title>Skipping rain</title>
+
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.4.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet" />
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+<link rel="stylesheet" href="justify.css" type="text/css" />
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Nicolas Slotte</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/NicolasSlotte">
+    <span class="fab fa-github fa-lg"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://www.linkedin.com/in/nicolas-slotte-2065551b8/">
+    <span class="fab fa-linkedin fa-lg"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Skipping rain</h1>
+<h4 class="author">Nicolas Slotte</h4>
+<h4 class="date">Première Itération | Juillet 2023</h4>
+
+</div>
+
+
+<pre class="r"><code># initiate
+
+rm(list = ls())
+
+# packages
+
+library(bookdown)
+library(tidyverse)
+library(kableExtra)
+library(knitr)</code></pre>
+<div id="introduction" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Introduction</h1>
+<p>En 2019, Cen Xiaolin battait le record du monde du plus grand nombre de sauts en corde à sauter dans un temps défini, avec un score de 228 tours en 30 secondes. Une question qui est devenue source inépuisable de memes mérite néanmoins d’être posée. Est-ce une vitesse de rotation suffisante pour éviter de se faire mouiller par temps pluvieux ? à défaut de disposer des compétences physiques de l’athlète en question pour y répondre par l’expérimentation, nous présentons une approche simplifiée permettant de déterminer si une vitesse typique de rotation de corde à sauter permettrait d’esquiver une averse sans se faire mouiller par la pluie.</p>
+</div>
+<div id="méthode" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Méthode</h1>
+<div id="définition-du-système" class="section level2" number="2.1">
+<h2><span class="header-section-number">2.1</span> Définition du système</h2>
+<p>Commençons par une identification des facteurs principaux intervenants dans ces calculs. Nos deux points de départ sont (i) la distance parcourue par une goutte de pluie durant un temps <span class="math inline">\(t\)</span> doit être inférieure ou égale à la section de la corde à sauter (ii) ce temps <span class="math inline">\(t\)</span> doit être supérieur ou égal à la période de révolution <span class="math inline">\(tr\)</span> de la corde à sauter. Ce qui peut se résumer à dire que durant une rotation complète de la corde, la distance parcourue par une goutte de pluie doit être inférieure ou égale à la section de la corde. Ces calculs n’étant pas destinés à un comité de lecture pour une publication Elsevier, nous simplifions ici le système en (i) considérant une corde absorbant n’importe quelle quantité d’eau (ii) négligeant les variations de hauteur du centre de rotation de la corde qui surviendraient durant les sauts.</p>
+<p><span class="math display">\[
+Y_g = v_g.t \tag{1}
+\]</span></p>
+<p><span class="math display">\[
+t \geq t_r \tag{2}
+\]</span></p>
+<p><span class="math display">\[
+\frac {Y_g}{v_g} \geq t_r \tag{3}
+\]</span>
+Avec <span class="math inline">\(Y_g\)</span> la distance parcourue par une goutte de pluie durant un temps <span class="math inline">\(t\)</span>, ou la section de la corde (en mètres); <span class="math inline">\(v_g\)</span> la vitesse de chute d’une goutte (en mètres par secondes) et <span class="math inline">\(t_r\)</span> la période de révolution (en secondes).</p>
+<p>Avec une vitesse angulaire définie comme <span class="math inline">\(\omega = \frac{2.\pi}{T}\)</span>, le nombre de tours par seconde se calcule comme</p>
+<p><span class="math display">\[
+N = 1/t_r \tag{4}
+\]</span></p>
+<p>Afin de déterminer le nombre minimal de tours par seconde, nous devons donc calculer <span class="math inline">\(v_g\)</span>. Nous fixons des valeurs de <span class="math inline">\(Y_g\)</span> entre 0.5 cm et 1 cm.</p>
+</div>
+<div id="vitesse-terminale" class="section level2" number="2.2">
+<h2><span class="header-section-number">2.2</span> Vitesse terminale</h2>
+<p>Selon Van Boxel (1998), deux forces principales déterminent la vitesse de chute des gouttes de pluie: La force de gravité <span class="math inline">\(F_g\)</span> et la force de friction due à la résistance de l’air <span class="math inline">\(F_f\)</span> exercée sur les gouttes. La vitesse terminale d’une goutte de pluie, se définissant comme la vitesse limite que va atteindre une goutte en chute libre, peut se calculer en égalisant les forces de gravité et de friction exercées sur une goutte. Cette vitesse terminale sera donc atteinte lorsque la force de friction est telle que la force de gravité ne permette plus d’accélérer la chute de la goutte.</p>
+<p>La force de gravitation exercée sur une goutte de pluie se calcule comme suit.</p>
+<p><span class="math display">\[
+F_g = m.g
+\]</span></p>
+<p><span class="math display">\[
+F_g = \rho_e.V_e.g
+\]</span></p>
+<p><span class="math display">\[
+F_g = \rho_e.4/3.\pi.r^3.g
+\]</span></p>
+<p><span class="math display">\[
+F_g = \rho_e.4/3.\pi.d^3.(\frac{1}{2})^3.g
+\]</span></p>
+<p><span class="math display">\[
+F_g = \frac{\rho_e.\pi.d^3.g}{6} \tag {5}
+\]</span></p>
+<p>Avec <span class="math inline">\(\rho_e\)</span> la masse volumique de l’eau fixée à 997 kg/m^3, <span class="math inline">\(d\)</span> le diamètre d’une goutte de pluie, <span class="math inline">\(g\)</span> la force de gravitation approximée à 9.81 m/s^2.</p>
+<p>La force de friction est définie comme suit.</p>
+<p><span class="math display">\[
+F_f = 3.\pi.d.\mu.V.C_t.C_d \tag{6}
+\]</span></p>
+<p>Avec <span class="math inline">\(\mu\)</span> la viscosité de l’air (18.10^-6 Pa.s à 20°C), <span class="math inline">\(d\)</span> le diamètre d’une goutte de pluie, <span class="math inline">\(V\)</span> sa vitesse de chute, <span class="math inline">\(C_t\)</span> le coefficient de turbulence et <span class="math inline">\(C_d\)</span> le coefficient de distorsion.</p>
+<p>Les petites gouttes de pluie (&lt; 0.05 mm) sont sphériques et le flux d’air autour de celles-ci peut être considérer comme laminaire. Pour ces petites gouttes, les coefficients <span class="math inline">\(C_t\)</span> et <span class="math inline">\(C_d\)</span> sont négligeables et l’égalisation des forces de gravité et de friction revient à la loi de Stokes.</p>
+<p><span class="math display">\[
+\frac{\rho_e.\pi.d^3.g}{6} = 3.\pi.d.\mu.V
+\]</span></p>
+<p><span class="math display">\[
+V = \frac{\rho_e.\pi.d^3/6.g}{3.\pi.d.\mu}
+\]</span></p>
+<p><span class="math display">\[
+V = \frac{\rho_e.d^2.g}{18.\mu} \tag{7}
+\]</span></p>
+<p>Les plus larges gouttes (&gt; 0.05 mm) ont une plus grande probabilité de subir des déformations lors de leur chute ce qui augmente leur force de friction. La vitesse terminale ne dépend alors plus directement du carré du diamètre et les coefficients de turbulence et de distorsion <span class="math inline">\(C_t\)</span> et <span class="math inline">\(C_d\)</span> doivent se calculer par itération pour obtenir une vitesse corrigée.</p>
+<p>Nous sélectionnons cependant l’approximation de Van Boxel (1998) (c.f. Equation 7) pour calculer la vitesse terminale de gouttes de diamètres &gt; 0.05 mm pour la suite de nos analyses.</p>
+</div>
+</div>
+<div id="modélisations" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> Modélisations</h1>
+<pre class="r"><code># variables definition
+
+max_level &lt;- 228/30
+g &lt;- 9.81 # m.s^-2
+rho_w = 997 # kg.m^-3
+mu_air &lt;- 1.825*10^-5 #Kg.m^-1.s^-1
+
+d &lt;- seq(0.05*10^-3, 1*10^-3, length = 10) # drops section in meters
+y_g &lt;- seq(5*10^-3, 10*10^-3, length = 10) # rope section in meters
+
+# simulations
+
+v_t &lt;- (g*rho_w*d^2)/(18*mu_air) # m.s^-1
+drop &lt;- data.frame(drop_diameter_m = d, speed = v_t)
+ds &lt;- expand.grid(rope_sections_m = y_g, speed = v_t)
+ds2 &lt;- left_join(ds, drop, by = &quot;speed&quot;)
+
+ds2 &lt;- ds2 %&gt;% mutate(n = speed/rope_sections_m,
+                      drop_diameter_mm = drop_diameter_m*1000,
+                      rope_sections_mm = round(rope_sections_m*1000, 2),
+                      drop_diameter_m = as.factor(drop_diameter_m),
+                      drop_diameter_mm = as.factor(round(drop_diameter_mm, 2)))</code></pre>
+<p>Bien que le nombre de tours par seconde minimal puisse maintenant se calculer de manière exacte au moyen des équations 3, 4 et 7 et pour les sections de cordes fixées, nous nous penchons davantage sur une représentation graphique de différentes simulations de sections de corde <span class="math inline">\(Y_g\)</span> et de diamètres des gouttes <span class="math inline">\(d\)</span>. Dans le cadre de ces premières simulations, nous construisons un jeu de données en faisant varier le diamètre des gouttes de pluie entre 0.05 mm et 1 mm et la section de la corde à sauter entre 5 mm et 10 mm (c.f. Figure 3.1).</p>
+<pre class="r"><code># plot the results
+
+ggplot(data = ds2, aes(y = n, x = rope_sections_mm, col = drop_diameter_mm)) + 
+  geom_line() +
+  geom_hline(aes(yintercept = max_level, linetype = &quot;Cen.X record&quot;), colour = &#39;black&#39;) +
+  scale_linetype_manual(name = &quot;Limite&quot;,
+                        values = c(2),
+                        guide = guide_legend(override.aes = list(color = c(&quot;black&quot;)))) +
+  scale_y_log10() +
+  labs(color = &quot;Diamètre gouttes (mm)&quot;, 
+     y = &quot;Nombre de tours par seconde&quot;, 
+     x = &quot;Diamètre de la corde (mm)&quot;) +
+  theme_bw()</code></pre>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-2"></span>
+<img src="skipping_rain_files/figure-html/unnamed-chunk-2-1.png" alt="Nombre de tours par seconde simulés pour différentes sections de cordes et tailles de gouttes." width="80%" />
+<p class="caption">
+Figure 3.1: Nombre de tours par seconde simulés pour différentes sections de cordes et tailles de gouttes.
+</p>
+</div>
+<pre class="r"><code># filter results
+
+ds_pass &lt;- ds2 %&gt;% filter(n &lt; max_level) %&gt;%
+  mutate_if(is.numeric, round, digits = 2) %&gt;%
+  select(-c(rope_sections_m, drop_diameter_m)) %&gt;%
+  mutate(max_level = max_level,
+         drop_diameter_mm = as.numeric(as.character(drop_diameter_mm))) %&gt;%
+  relocate(c(drop_diameter_mm, rope_sections_mm, speed, n, max_level))
+
+# print table
+
+knitr::kable(ds_pass, 
+             format = &quot;html&quot;,
+             row.names = FALSE,
+             caption = &quot;Paramètres permettant une vitesse de rotation inférieure au record de Cen Xiaolin.&quot;,
+             col.names = c(&quot;Diamètre de la goutte (mm)&quot;,
+                           &quot;Section Corde (mm)&quot;,
+                           &quot;Vitesse de chute (m/s)&quot;,
+                           &quot;Tours/seconde&quot;,
+                           &quot;Record C.X (tours/sec)&quot;)) %&gt;%
+  kable_classic(full_width = F,
+                position = &quot;center&quot;,
+                font_size = 14,
+                lightable_options = &quot;basic&quot;,
+                html_font = &quot;sans-serif&quot;)</code></pre>
+<table class=" lightable-classic" style="font-size: 14px; font-family: sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption style="font-size: initial !important;">
+<span id="tab:unnamed-chunk-3">Table 3.1: </span>Paramètres permettant une vitesse de rotation inférieure au record de Cen Xiaolin.
+</caption>
+<thead>
+<tr>
+<th style="text-align:right;">
+Diamètre de la goutte (mm)
+</th>
+<th style="text-align:right;">
+Section Corde (mm)
+</th>
+<th style="text-align:right;">
+Vitesse de chute (m/s)
+</th>
+<th style="text-align:right;">
+Tours/seconde
+</th>
+<th style="text-align:right;">
+Record C.X (tours/sec)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+10
+</td>
+<td style="text-align:right;">
+0.07
+</td>
+<td style="text-align:right;">
+7.44
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+</tbody>
+</table>
+<p>Sur base de la figure 3.1 et de la table 3.1, nous pouvons conclure qu’au moins quelques concurrents directs de Cen Xiaolin seraient probablement capables de sauter suffisamment rapidement pour esquiver la chute de gouttes de pluie de 0.05 mm de diamètre, avec une corde de 10 mm de section. Cependant, cette réponse est quelque peu décevante du fait qu’elle restreigne drastiquement la tranche de la population pouvant utiliser une corde à sauter pour remplacer efficacement un parapluie.</p>
+<p>Mais essayons de pousser l’exercice plus loin.</p>
+<p>A partir des équations 3 et 7, les paramètres principaux que nous pouvons faire varier sont <span class="math inline">\(Y_g\)</span>, <span class="math inline">\(d\)</span> et <span class="math inline">\(g\)</span>. Certains objets du système solaire ayant des gravités plus faibles que celle de la Terre, imaginons à présent, pour une raison improbable, que les prochains astronautes en mission outre-Terre jugent notre raisonnement de pensée indispensable pour mener à bien leurs prochaines expéditions. Afin de déterminer comment le nombre de tours par seconde <span class="math inline">\(t_r\)</span> serait affecté par différentes valeurs de <span class="math inline">\(g\)</span>, nous sélectionnons ici Mercure, la Lune et Mars présentant des gravités inférieures à celle de la Terre. Mercure et Mars présentant des gravités identiques, nous utilisons uniquement Mars pour nos modélisations (c.f. Table 3.2).</p>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-4"></span>
+<img src="img/happy_elon.jpg" alt="Let's make Mars great again - Leon Smuk" width="30%" />
+<p class="caption">
+Figure 3.2: Let’s make Mars great again - Leon Smuk
+</p>
+</div>
+<pre class="r"><code># define gravities
+
+gravities &lt;- data.frame(objects = c(&quot;Mercure&quot;, &quot;Venus&quot;, &quot;Terre&quot;, &quot;Lune&quot;, &quot;Mars&quot;, &quot;Jupiter&quot;, &quot;Saturne&quot;, &quot;Uranus&quot;, &quot;Neptune&quot;), 
+                        gravity = c(3.71, 8.87, 9.81, 1.62, 3.71, 24.79, 10.44, 8.87, 11.15))
+
+# print table
+
+knitr::kable(gravities, 
+                   format = &quot;html&quot;,
+                   row.names = FALSE,
+                   caption = &quot;Gravités sur différents objets du système solaire.&quot;,
+                   col.names = c(&quot;Objets&quot;, &quot;Gravité (m/s^2)&quot;)) %&gt;%
+  kable_classic(full_width = F, 
+                font_size = 14,
+                lightable_options = &quot;basic&quot;,
+                html_font = &quot;sans-serif&quot;)</code></pre>
+<table class=" lightable-classic" style="font-size: 14px; font-family: sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption style="font-size: initial !important;">
+<span id="tab:unnamed-chunk-5">Table 3.2: </span>Gravités sur différents objets du système solaire.
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Objets
+</th>
+<th style="text-align:right;">
+Gravité (m/s^2)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Mercure
+</td>
+<td style="text-align:right;">
+3.71
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Venus
+</td>
+<td style="text-align:right;">
+8.87
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Terre
+</td>
+<td style="text-align:right;">
+9.81
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lune
+</td>
+<td style="text-align:right;">
+1.62
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Mars
+</td>
+<td style="text-align:right;">
+3.71
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Jupiter
+</td>
+<td style="text-align:right;">
+24.79
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Saturne
+</td>
+<td style="text-align:right;">
+10.44
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Uranus
+</td>
+<td style="text-align:right;">
+8.87
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Neptune
+</td>
+<td style="text-align:right;">
+11.15
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># simulations
+
+gravities_ &lt;- gravities %&gt;% filter(objects %in% c(&quot;Terre&quot;, &quot;Mars&quot;, &quot;Lune&quot;))
+g &lt;- gravities_$gravity
+
+ds_f &lt;- data.frame()
+
+for (i in g){
+  
+  v_t &lt;- (i*rho_w*d^2)/(18*mu_air) # m.s^-1
+  drop &lt;- data.frame(drop_diameter_m = d, speed = v_t, gravity = i)
+  ds &lt;- expand.grid(rope_sections_m = y_g, speed = v_t)
+  ds2 &lt;- left_join(ds, drop, by = &quot;speed&quot;)
+  
+  ds2 &lt;- ds2 %&gt;% mutate(n = speed/rope_sections_m,
+                        drop_diameter_mm = drop_diameter_m*1000,
+                        rope_sections_mm = round(rope_sections_m*1000, 2),
+                        drop_diameter_m = as.factor(drop_diameter_m),
+                        drop_diameter_mm = as.factor(round(drop_diameter_mm, 2)))
+  
+  ds_f &lt;- rbind(ds2, ds_f)
+  
+}
+
+ds_f &lt;- full_join(ds_f, gravities_, by = &quot;gravity&quot;)
+
+# plot the results
+
+ggplot(data = ds_f, aes(y = n, x = rope_sections_mm, col = drop_diameter_mm)) + 
+  geom_line() +
+  geom_hline(aes(yintercept = max_level, linetype = &quot;Cen.X record&quot;), colour = &#39;black&#39;) +
+  scale_linetype_manual(name = &quot;Limite&quot;,
+                        values = c(2),
+                        guide = guide_legend(override.aes = list(color = c(&quot;black&quot;)))) +
+  scale_y_log10() +
+  facet_grid(.~ objects) +
+  
+  labs(color = &quot;Diamètre gouttes (mm)&quot;, 
+       y = &quot;Nombre de tours par seconde&quot;, 
+       x = &quot;Diamètre de la corde (mm)&quot;) +
+  theme_bw()</code></pre>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-6"></span>
+<img src="skipping_rain_files/figure-html/unnamed-chunk-6-1.png" alt="Présentation graphique des simulations." width="80%" />
+<p class="caption">
+Figure 3.3: Présentation graphique des simulations.
+</p>
+</div>
+<pre class="r"><code># filter results
+
+ds_pass &lt;- ds_f %&gt;% filter(n &lt; max_level) %&gt;%
+  mutate_if(is.numeric, round, digits = 2) %&gt;%
+  select(-c(rope_sections_m, drop_diameter_m)) %&gt;%
+  mutate(max_level = max_level,
+         drop_diameter_mm = as.numeric(as.character(drop_diameter_mm))) %&gt;%
+  relocate(c(objects, gravity, drop_diameter_mm, rope_sections_mm, speed, n, max_level))
+
+# print table
+
+knitr::kable(ds_pass,
+             format = &quot;html&quot;,
+             row.names = FALSE,
+             caption = &quot;Paramètres permettant une vitesse de rotation inférieure au record de Cen Xiaolin.&quot;,
+             col.names = c(&quot;Objets&quot;, &quot;Gravité (m/s^2)&quot;, &quot;Diamètre de la goutte (mm)&quot;, &quot;Section Corde (mm)&quot;, &quot;Vitesse de chute (m/s)&quot;, &quot;Tours/seconde&quot;, &quot;Record C.X (tours/sec)&quot;)) %&gt;%
+  kable_classic(full_width = F,
+                font_size = 14,
+                lightable_options = &quot;basic&quot;,
+                html_font = &quot;sans-serif&quot;)</code></pre>
+<table class=" lightable-classic" style="font-size: 14px; font-family: sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption style="font-size: initial !important;">
+<span id="tab:unnamed-chunk-7">Table 3.3: </span>Paramètres permettant une vitesse de rotation inférieure au record de Cen Xiaolin.
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Objets
+</th>
+<th style="text-align:right;">
+Gravité (m/s^2)
+</th>
+<th style="text-align:right;">
+Diamètre de la goutte (mm)
+</th>
+<th style="text-align:right;">
+Section Corde (mm)
+</th>
+<th style="text-align:right;">
+Vitesse de chute (m/s)
+</th>
+<th style="text-align:right;">
+Tours/seconde
+</th>
+<th style="text-align:right;">
+Record C.X (tours/sec)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Mars
+</td>
+<td style="text-align:right;">
+3.71
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+5.00
+</td>
+<td style="text-align:right;">
+0.03
+</td>
+<td style="text-align:right;">
+5.63
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Mars
+</td>
+<td style="text-align:right;">
+3.71
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+5.56
+</td>
+<td style="text-align:right;">
+0.03
+</td>
+<td style="text-align:right;">
+5.07
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Mars
+</td>
+<td style="text-align:right;">
+3.71
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+6.11
+</td>
+<td style="text-align:right;">
+0.03
+</td>
+<td style="text-align:right;">
+4.61
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Mars
+</td>
+<td style="text-align:right;">
+3.71
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+6.67
+</td>
+<td style="text-align:right;">
+0.03
+</td>
+<td style="text-align:right;">
+4.22
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Mars
+</td>
+<td style="text-align:right;">
+3.71
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+7.22
+</td>
+<td style="text-align:right;">
+0.03
+</td>
+<td style="text-align:right;">
+3.90
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Mars
+</td>
+<td style="text-align:right;">
+3.71
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+7.78
+</td>
+<td style="text-align:right;">
+0.03
+</td>
+<td style="text-align:right;">
+3.62
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Mars
+</td>
+<td style="text-align:right;">
+3.71
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+8.33
+</td>
+<td style="text-align:right;">
+0.03
+</td>
+<td style="text-align:right;">
+3.38
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Mars
+</td>
+<td style="text-align:right;">
+3.71
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+8.89
+</td>
+<td style="text-align:right;">
+0.03
+</td>
+<td style="text-align:right;">
+3.17
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Mars
+</td>
+<td style="text-align:right;">
+3.71
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+9.44
+</td>
+<td style="text-align:right;">
+0.03
+</td>
+<td style="text-align:right;">
+2.98
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Mars
+</td>
+<td style="text-align:right;">
+3.71
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+10.00
+</td>
+<td style="text-align:right;">
+0.03
+</td>
+<td style="text-align:right;">
+2.81
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lune
+</td>
+<td style="text-align:right;">
+1.62
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+5.00
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:right;">
+2.46
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lune
+</td>
+<td style="text-align:right;">
+1.62
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+5.56
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:right;">
+2.21
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lune
+</td>
+<td style="text-align:right;">
+1.62
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+6.11
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:right;">
+2.01
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lune
+</td>
+<td style="text-align:right;">
+1.62
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+6.67
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:right;">
+1.84
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lune
+</td>
+<td style="text-align:right;">
+1.62
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+7.22
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:right;">
+1.70
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lune
+</td>
+<td style="text-align:right;">
+1.62
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+7.78
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:right;">
+1.58
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lune
+</td>
+<td style="text-align:right;">
+1.62
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+8.33
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:right;">
+1.48
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lune
+</td>
+<td style="text-align:right;">
+1.62
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+8.89
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:right;">
+1.38
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lune
+</td>
+<td style="text-align:right;">
+1.62
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+9.44
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:right;">
+1.30
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lune
+</td>
+<td style="text-align:right;">
+1.62
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+10.00
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:right;">
+1.23
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Terre
+</td>
+<td style="text-align:right;">
+9.81
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+10.00
+</td>
+<td style="text-align:right;">
+0.07
+</td>
+<td style="text-align:right;">
+7.44
+</td>
+<td style="text-align:right;">
+7.6
+</td>
+</tr>
+</tbody>
+</table>
+<p>Ces résultats pour la Lune et Mars sont nettement plus satisfaisants ! Sur la Lune, nous devrions sauter à une fréquence de 1 à 2 tours par seconde en fonction de la section de la corde, ce qui est raisonnable pour des individus actifs. Sur Mars, les conditions restreignent l’utilisation de la corde à sauter aux athlètes les plus expérimentés avec des fréquences entre 3, et 6 tours par seconde en fonction de la section de la corde. Toutefois, le domaine d’application se réduit uniquement à des gouttes de pluies de 0.05 mm de diamètre.</p>
+</div>
+<div id="conclusions" class="section level1" number="4">
+<h1><span class="header-section-number">4</span> Conclusions</h1>
+<p>En conditions terrestres, l’utilisation d’une corde à sauter comme unique outil de dissuasion pluviale semble une solution peu réaliste pour la majorité de la population. Même pour les athlètes performants, cette solution serait envisageable uniquement pour les averses dont la taille des gouttes se limite à 0.05 mm de diamètre.</p>
+<p>En conditions lunaires et martiennes, la gravité inférieure à celle de la Terre nous permettrait de réduire significativement la fréquence de rotation de la corde et ce, particulièrement en conditions lunaires avec des fréquences de rotation avoisinant les 2 tours par seconde. La force de gravité restant la variable limitante, seulement les plus petites gouttes de pluie de 0.05 mm permettraient d’obtenir des vitesses terminales suffisamment faibles pour réduire la fréquence de rotation minimale.</p>
+</div>
+<div id="références" class="section level1" number="5">
+<h1><span class="header-section-number">5</span> Références</h1>
+<p>Van Boxel, J. (1998). Numerical model for the fall speed of raindrops in a rainfall simulator. I.C.E. Special Report, 1998/1, 77-85.</p>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

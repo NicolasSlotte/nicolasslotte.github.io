@@ -3,7 +3,6 @@ title: "My projects website"
 output:
   bookdown::html_document2:
     number_sections: false
-    css: "justify.css"
 ---
 
 ## About
@@ -14,8 +13,8 @@ Welcome to my website! I'm trying this new format to share my original coding pr
 
 [**Coffee classification**](coffee_classification.html): Complete | Based on coffee beans images, we built a statistical model capable of accurately predicting a bean type. Developed using the packages RVision, Caret and Tidyverse.
 
-[**Sudoku**](): Work in progress | Computation of the probability of convergence as a function of the number of pre-filled cells in a Sudoku board.
+[**Skipping rain**](skipping_rain.html): Complete | How fast does one need to spin a skipping rope to avoid being soaked by the rain.
 
-[**Skipping rain**](): Work in progress | How fast does one need to spin a skipping rope to avoid being soaked by the rain.
+**Sudoku**: Work in progress | Computation of the probability of convergence as a function of the number of pre-filled cells in a Sudoku board.
 
-[**Covid-19 maps**](): Work in progress | Some pleasing visualizations of the pandemic data using geom_tile.
+**Covid-19 maps**: Work in progress | Some pleasing visualizations of the pandemic data using geom_tile.
