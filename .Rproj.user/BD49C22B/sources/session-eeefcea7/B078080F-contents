@@ -201,12 +201,6 @@ Mais essayons de pousser l'exercice plus loin.
 A partir des équations 3 et 7, les paramètres principaux que nous pouvons faire varier sont $Y_g$, $d$ et $g$. Certains objets du système solaire ayant des gravités plus faibles que celle de la Terre, imaginons à présent, pour une raison improbable, que les prochains astronautes en mission outre-Terre jugent notre raisonnement de pensée indispensable pour mener à bien leurs prochaines expéditions. Afin de déterminer comment le nombre de tours par seconde $t_r$ serait affecté par différentes valeurs de $g$, nous sélectionnons ici Mercure, la Lune et Mars présentant des gravités inférieures à celle de la Terre. Mercure et Mars présentant des gravités identiques, nous utilisons uniquement Mars pour nos modélisations (c.f. Table 3.2).
 
 
-```{r, echo=FALSE, fig.align="center", out.width="30%", fig.cap="Let's make Mars great again - Leon Smuk"}
-
-knitr::include_graphics("img/happy_elon.jpg")
-
-```
-
 ```{r, results = 'asis', include = TRUE, warning = FALSE}
 
 # define gravities

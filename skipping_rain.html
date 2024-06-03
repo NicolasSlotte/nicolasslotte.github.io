@@ -555,12 +555,6 @@ Record C.X (tours/sec)
 <p>Sur base de la figure 3.1 et de la table 3.1, nous pouvons conclure qu’au moins quelques concurrents directs de Cen Xiaolin seraient probablement capables de sauter suffisamment rapidement pour esquiver la chute de gouttes de pluie de 0.05 mm de diamètre, avec une corde de 10 mm de section. Cependant, cette réponse est quelque peu décevante du fait qu’elle restreigne drastiquement la tranche de la population pouvant utiliser une corde à sauter pour remplacer efficacement un parapluie.</p>
 <p>Mais essayons de pousser l’exercice plus loin.</p>
 <p>A partir des équations 3 et 7, les paramètres principaux que nous pouvons faire varier sont <span class="math inline">\(Y_g\)</span>, <span class="math inline">\(d\)</span> et <span class="math inline">\(g\)</span>. Certains objets du système solaire ayant des gravités plus faibles que celle de la Terre, imaginons à présent, pour une raison improbable, que les prochains astronautes en mission outre-Terre jugent notre raisonnement de pensée indispensable pour mener à bien leurs prochaines expéditions. Afin de déterminer comment le nombre de tours par seconde <span class="math inline">\(t_r\)</span> serait affecté par différentes valeurs de <span class="math inline">\(g\)</span>, nous sélectionnons ici Mercure, la Lune et Mars présentant des gravités inférieures à celle de la Terre. Mercure et Mars présentant des gravités identiques, nous utilisons uniquement Mars pour nos modélisations (c.f. Table 3.2).</p>
-<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-4"></span>
-<img src="img/happy_elon.jpg" alt="Let's make Mars great again - Leon Smuk" width="30%" />
-<p class="caption">
-Figure 3.2: Let’s make Mars great again - Leon Smuk
-</p>
-</div>
 <pre class="r"><code># define gravities
 
 gravities &lt;- data.frame(objects = c(&quot;Mercure&quot;, &quot;Venus&quot;, &quot;Terre&quot;, &quot;Lune&quot;, &quot;Mars&quot;, &quot;Jupiter&quot;, &quot;Saturne&quot;, &quot;Uranus&quot;, &quot;Neptune&quot;), 
@@ -579,7 +573,7 @@ knitr::kable(gravities,
                 html_font = &quot;sans-serif&quot;)</code></pre>
 <table class=" lightable-classic" style="font-size: 14px; font-family: sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
 <caption style="font-size: initial !important;">
-<span id="tab:unnamed-chunk-5">Table 3.2: </span>Gravités sur différents objets du système solaire.
+<span id="tab:unnamed-chunk-4">Table 3.2: </span>Gravités sur différents objets du système solaire.
 </caption>
 <thead>
 <tr>
@@ -707,10 +701,10 @@ ggplot(data = ds_f, aes(y = n, x = rope_sections_mm, col = drop_diameter_mm)) +
        y = &quot;Nombre de tours par seconde&quot;, 
        x = &quot;Diamètre de la corde (mm)&quot;) +
   theme_bw()</code></pre>
-<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-6"></span>
-<img src="skipping_rain_files/figure-html/unnamed-chunk-6-1.png" alt="Présentation graphique des simulations." width="80%" />
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-5"></span>
+<img src="skipping_rain_files/figure-html/unnamed-chunk-5-1.png" alt="Présentation graphique des simulations." width="80%" />
 <p class="caption">
-Figure 3.3: Présentation graphique des simulations.
+Figure 3.2: Présentation graphique des simulations.
 </p>
 </div>
 <pre class="r"><code># filter results
@@ -735,7 +729,7 @@ knitr::kable(ds_pass,
                 html_font = &quot;sans-serif&quot;)</code></pre>
 <table class=" lightable-classic" style="font-size: 14px; font-family: sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
 <caption style="font-size: initial !important;">
-<span id="tab:unnamed-chunk-7">Table 3.3: </span>Paramètres permettant une vitesse de rotation inférieure au record de Cen Xiaolin.
+<span id="tab:unnamed-chunk-6">Table 3.3: </span>Paramètres permettant une vitesse de rotation inférieure au record de Cen Xiaolin.
 </caption>
 <thead>
 <tr>
