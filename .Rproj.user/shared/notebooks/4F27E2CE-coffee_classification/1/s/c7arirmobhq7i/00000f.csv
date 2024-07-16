@@ -1,0 +1,7 @@
+"0",""
+"0","# surface distribution"
+"0",""
+"0","ggplot(data = surface, aes(x = surface, col = type)) + "
+"0","  geom_density() +"
+"0","  theme_bw() +"
+"0","  labs(y = ""Density"", x = ""Surface (pixel count)"")"

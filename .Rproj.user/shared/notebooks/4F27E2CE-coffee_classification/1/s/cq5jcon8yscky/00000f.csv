@@ -1,0 +1,7 @@
+"0",""
+"0","# color distribution"
+"0",""
+"0","ggplot(data = colors, aes(x = intensity, col = type)) + "
+"0","  geom_density() +"
+"0","  theme_bw() +"
+"0","  labs(y = ""Density"", x = ""Color intensity (0 to 255)"")"

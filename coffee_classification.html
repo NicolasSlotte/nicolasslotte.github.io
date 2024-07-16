@@ -1050,6 +1050,7 @@ SurfaceBoundary = \frac{0.5 - \hat{\beta}_0 - \hat{\beta}_1Intensity}{\hat{\beta
 <p>Before fitting this model, we created two data partitions to avoid overfitting. Those partitions were created using the function <em>createDataPartition</em> from the <em>caret</em> package. The DED type was defined as the outcome <span class="math inline">\(Y = 1\)</span> and the EGN type as <span class="math inline">\(Y = 0\)</span>. We first trained our model on a labeled data partition (<em>train_set</em>) and then applied it on an unlabeled data partition (<em>test_set</em>) to make predictions (<em>y_hat</em>). The coefficients <span class="math inline">\(\hat{\beta}_0\)</span>, <span class="math inline">\(\hat{\beta}_1\)</span> and <span class="math inline">\(\hat{\beta}_2\)</span> were retrieved from the model and used to draw the segregation line defined in equation 7.</p>
 <pre class="r"><code># create a data partition
 
+set.seed(1)
 test_index &lt;- createDataPartition(y = surfcol$type, times = 1, p = 0.5, list = FALSE)
 
 test_set &lt;- surfcol[test_index, ]
@@ -1150,10 +1151,10 @@ Actual EGN (Y = 0)
 ded
 </td>
 <td style="text-align:right;">
-49
+48
 </td>
 <td style="text-align:right;">
-4
+2
 </td>
 </tr>
 <tr>
@@ -1161,10 +1162,10 @@ ded
 egn
 </td>
 <td style="text-align:right;">
-1
+2
 </td>
 <td style="text-align:right;">
-46
+48
 </td>
 </tr>
 </tbody>
@@ -1202,7 +1203,7 @@ Scores
 Sensitivity
 </td>
 <td style="text-align:right;">
-0.98
+0.96
 </td>
 </tr>
 <tr>
@@ -1210,7 +1211,7 @@ Sensitivity
 Specificity
 </td>
 <td style="text-align:right;">
-0.92
+0.96
 </td>
 </tr>
 <tr>
@@ -1218,7 +1219,7 @@ Specificity
 Pos Pred Value
 </td>
 <td style="text-align:right;">
-0.92
+0.96
 </td>
 </tr>
 <tr>
@@ -1226,7 +1227,7 @@ Pos Pred Value
 Neg Pred Value
 </td>
 <td style="text-align:right;">
-0.98
+0.96
 </td>
 </tr>
 <tr>
@@ -1234,7 +1235,7 @@ Neg Pred Value
 Precision
 </td>
 <td style="text-align:right;">
-0.92
+0.96
 </td>
 </tr>
 <tr>
@@ -1242,7 +1243,7 @@ Precision
 Recall
 </td>
 <td style="text-align:right;">
-0.98
+0.96
 </td>
 </tr>
 <tr>
@@ -1250,7 +1251,7 @@ Recall
 F1
 </td>
 <td style="text-align:right;">
-0.95
+0.96
 </td>
 </tr>
 <tr>
@@ -1266,7 +1267,7 @@ Prevalence
 Detection Rate
 </td>
 <td style="text-align:right;">
-0.49
+0.48
 </td>
 </tr>
 <tr>
@@ -1274,7 +1275,7 @@ Detection Rate
 Detection Prevalence
 </td>
 <td style="text-align:right;">
-0.53
+0.50
 </td>
 </tr>
 <tr>
@@ -1282,7 +1283,7 @@ Detection Prevalence
 Balanced Accuracy
 </td>
 <td style="text-align:right;">
-0.95
+0.96
 </td>
 </tr>
 </tbody>
@@ -1291,7 +1292,7 @@ Balanced Accuracy
 </div>
 <div id="conclusion" class="section level1" number="4">
 <h1><span class="header-section-number">4</span> Conclusion</h1>
-<p>To sum up this project, an <span class="math inline">\(F_1Score\)</span> of 0.95 as presented in table 3.2 is beyond expectations for this first iteration, and perfectly illustrate the capability of our model to segregate the two bean types selected. An interesting next step would be to (i) increase the number of predictors (e.g. reflectance, length over width ratio, RGB color channels, etc.) and perform different dimension reduction analysis (although it doesn’t seem necessary considering the quality of our current model) (ii) increase the number of bean type and investigate if a clustering analysis would provide the same level of accuracy.</p>
+<p>To sum up this project, an <span class="math inline">\(F_1Score\)</span> of 0.96 as presented in table 3.2 is beyond expectations for this first iteration, and perfectly illustrate the capability of our model to segregate the two bean types selected. An interesting next step would be to (i) increase the number of predictors (e.g. reflectance, length over width ratio, RGB color channels, etc.) and perform different dimension reduction analysis (although it doesn’t seem necessary considering the quality of our current model) (ii) increase the number of bean type and investigate if a clustering analysis would provide the same level of accuracy.</p>
 </div>
 <div id="ressources" class="section level1" number="5">
 <h1><span class="header-section-number">5</span> Ressources</h1>
@@ -1339,7 +1340,7 @@ $(document).ready(function () {
 <!-- code folding -->
 <script>
 $(document).ready(function () {
-  window.initializeCodeFolding("hide" === "show");
+  window.initializeCodeFolding("show" === "show");
 });
 </script>
 
