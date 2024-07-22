@@ -1,0 +1,158 @@
+---
+title: "Pascal's triangle"
+author: "Nicolas Slotte"
+date: "July 2024"
+output:
+  bookdown::html_document2:
+    number_sections: true
+    css: "justify.css"
+    code_folding: show
+    toc: true
+    toc_depth: 2
+    toc_float: true
+---
+
+
+```{r setup, results = FALSE, message = FALSE, warning = FALSE}
+
+# Initiate
+
+rm(list = ls())
+
+# Packages
+
+library(bookdown)
+library(reticulate)
+library(kableExtra)
+
+```
+
+# Introduction
+
+in 2015, the very first programming course that I was required to take was focusing on the basics of Python. In January, the last exam question asked to build a mathematical structure called a Pascal's Triangle, from scratch, using pen and paper. In my case, the time I had left before the end of this exam was 20 minutes. Luckily, after some **fast** thinking I succeeded to produce a short piece of code that worked. And today, I still think this is one of the most interesting short interview questions I came across! So let's dive into it.
+
+At this point, I'm very lazy when it comes to trying new IDEs...Because why bother if RStudio works fine, right? However, the *reticulate* library allows to switch easily from R to Python chunks. So, let's start with the original Python version that I coded in 2015, and then see how we can translate it in R!
+
+# Triangle's rules
+
+In mathematics, a Pascal's triangle is an infinite triangular array of the binomial coefficients. The rows of the triangle are conventionally enumerated starting with row n = 0 at the top, while the entries in each row are numbered from the left starting with k = 0 and are usually staggered relative to the numbers in the previous row.
+
+The triangle may be constructed in the following manner: (i) it starts with a unique value of 1 at the 0th position n = 0 and k = 0 (ii) each row starts and ends with a value of 1 (iii) each entry of each subsequent row is constructed by adding the two closest number from the previous row, treating blank entries as 0. For example, the initial number of row 1 is 1 (the sum of 0 and 1), and the numbers 1 and 3 in row 3 are added to produce the number 4 in row 4 (c.f. Figure 2.1).
+
+```{r, echo=FALSE, fig.align="center", out.width="25%", fig.cap="The first 5th lines of the Pascal's triangle."}
+
+image <- "img/triangle.svg"
+knitr::include_graphics(image)
+
+```
+
+The $n$th row and the $k$th entry of the Pascal's triangle is denoted
+
+$$
+\begin{pmatrix} n\\ k \end{pmatrix} \tag{1}
+$$
+
+With this notation, the whole triangle can be constructed with the following formula, for any positive integer $n$ and $k$ so that $0 \leq k \leq n$.
+
+$$
+\begin{pmatrix} n\\ k \end{pmatrix} = \begin{pmatrix} n - 1 \\ k - 1 \end{pmatrix} + \begin{pmatrix} n - 1 \\ k \end{pmatrix} \tag{2}
+$$
+
+# Python version 
+
+When I first coded the triangle back in 2015, I basically wrote it on paper first, and tried to understand how to code the filling rules by hand. Here is this original Python code below. I coded two loops (i) one for-loop that iterates through each line $n$, starts by adding a 1 for each $k = 0$, finishes the line $n$ with another 1 at the position $k = n$ and (ii) a while-loop that performs the staggered addition for each line $n$.
+
+```{python}
+
+# Original python function
+
+def pascal_py(n_max):
+  
+    # initiate
+    res = [[1]]
+    
+    # staggered addition
+    for j in range(n_max):
+      
+        c = []
+        
+        # k = 0
+        c.append(1)
+        i = 0
+        while i < j:
+            z = res[len(res)-1][i]
+            x = res[len(res)-1][i+1]
+            c.append(z+x)
+            i = i + 1
+            
+        # k = n    
+        c.append(1)
+        
+        # add the line to the list
+        res.append(c)
+    return res
+
+pascal_py_res = pascal_py(5)
+
+```
+
+Back to an R chunk, we can extract the python results stored into the $py$ object, and store them into an R object.
+
+```{r, results = 'asis', include = TRUE}
+
+# Stores the python results as an R object
+
+res_py <- py$pascal_py_res
+res_py
+
+```
+
+And it works great!
+
+# R version
+
+Now, let's focus on the R translation. The tricky part will be the index equivalence, since python starts counting from 0 and R from 1. So we have to make sure our increments are properly translated.
+
+```{r, results = 'asis', include = TRUE}
+
+# R translation of the original python code
+
+pascal_r <- function(n_max){
+
+  # initiate
+  res <- list()
+  
+  # line n = 0
+  res[[1]] <- c(1)
+  
+  # staggered addition
+  for (j in 1:(n_max)){
+    
+    # k = 0
+    c <- c(1)
+    i = 1
+    while (i < j){
+      z <- res[[length(res)]][i]
+      x <- res[[length(res)]][i+1]
+      c <- c(c, (z+x))
+      i = i + 1
+    }
+    
+    # k = n
+    c <- c(c, 1)
+    
+    # add the line to the list
+    res[[length(res) + 1]] <- c
+  }
+  
+  res
+  
+}
+
+res_r <- pascal_r(5)
+res_r
+
+```
+
+As expected, this piece of R code gives the same results and is structured the exact same manner. Another interesting addition to this exercise would be to (i) assess the time and space complexity of those codes and see if we can improve it (ii) compare the execution speed of the Python code through the *reticulate* package and with another dedicated Python IDE.
+

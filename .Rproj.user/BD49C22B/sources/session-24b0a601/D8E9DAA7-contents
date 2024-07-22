@@ -1,0 +1,306 @@
+---
+title: "Skipping rain"
+author: "Nicolas Slotte"
+date: "Première Itération | Juillet 2023"
+output:
+  bookdown::html_document2:
+    number_sections: true
+    css: "justify.css"
+    code_folding: show
+    toc: true
+    toc_depth: 2
+    toc_float: true
+---
+
+
+```{r setup, results = FALSE, message = FALSE, warning = FALSE}
+
+# initiate
+
+rm(list = ls())
+
+# packages
+
+library(bookdown)
+library(tidyverse)
+library(kableExtra)
+library(knitr)
+
+```
+
+# Introduction
+
+En 2019, Cen Xiaolin battait le record du monde du plus grand nombre de sauts en corde à sauter dans un temps défini, avec un score de 228 tours en 30 secondes. Une question qui est devenue source inépuisable de memes mérite néanmoins d'être posée. Est-ce une vitesse de rotation suffisante pour éviter de se faire mouiller par temps pluvieux ? à défaut de disposer des compétences physiques de l'athlète en question pour y répondre par l'expérimentation, nous présentons une approche simplifiée permettant de déterminer si une vitesse typique de rotation de corde à sauter permettrait d'esquiver une averse sans se faire mouiller par la pluie.
+
+# Méthode
+
+## Définition du système
+
+Commençons par une identification des facteurs principaux intervenants dans ces calculs. Nos deux points de départ sont (i) la distance parcourue par une goutte de pluie durant un temps $t$ doit être inférieure ou égale à la section de la corde à sauter (ii) ce temps $t$ doit être supérieur ou égal à la période de révolution $tr$ de la corde à sauter. Ce qui peut se résumer à dire que durant une rotation complète de la corde, la distance parcourue par une goutte de pluie doit être inférieure ou égale à la section de la corde. Ces calculs n'étant pas destinés à un comité de lecture pour une publication Elsevier, nous simplifions ici le système en (i) considérant une corde absorbant n'importe quelle quantité d'eau (ii) négligeant les variations de hauteur du centre de rotation de la corde qui surviendraient durant les sauts.
+
+$$
+Y_g = v_g.t \tag{1}
+$$
+
+$$
+t \geq t_r \tag{2}
+$$
+
+$$
+\frac {Y_g}{v_g} \geq t_r \tag{3}
+$$
+Avec $Y_g$ la distance parcourue par une goutte de pluie durant un temps $t$, ou la section de la corde (en mètres); $v_g$ la vitesse de chute d'une goutte (en mètres par secondes) et $t_r$ la période de révolution (en secondes).
+
+Avec une vitesse angulaire définie comme $\omega = \frac{2.\pi}{T}$, le nombre de tours par seconde se calcule comme
+
+$$
+N = 1/t_r \tag{4}
+$$
+
+Afin de déterminer le nombre minimal de tours par seconde, nous devons donc calculer $v_g$. Nous fixons des valeurs de $Y_g$ entre 0.5 cm et 1 cm.
+
+## Vitesse terminale
+
+Selon Van Boxel (1998), deux forces principales déterminent la vitesse de chute des gouttes de pluie: La force de gravité $F_g$ et la force de friction due à la résistance de l'air $F_f$ exercée sur les gouttes. La vitesse terminale d'une goutte de pluie, se définissant comme la vitesse limite que va atteindre une goutte en chute libre, peut se calculer en égalisant les forces de gravité et de friction exercées sur une goutte. Cette vitesse terminale sera donc atteinte lorsque la force de friction est telle que la force de gravité ne permette plus d'accélérer la chute de la goutte.
+
+La force de gravitation exercée sur une goutte de pluie se calcule comme suit.
+
+$$
+F_g = m.g
+$$
+
+$$
+F_g = \rho_e.V_e.g
+$$
+
+$$
+F_g = \rho_e.4/3.\pi.r^3.g
+$$
+
+$$
+F_g = \rho_e.4/3.\pi.d^3.(\frac{1}{2})^3.g
+$$
+
+$$
+F_g = \frac{\rho_e.\pi.d^3.g}{6} \tag {5}
+$$
+
+Avec $\rho_e$ la masse volumique de l'eau fixée à 997 kg/m^3, $d$ le diamètre d'une goutte de pluie, $g$ la force de gravitation approximée à 9.81 m/s^2.
+
+La force de friction est définie comme suit.
+
+$$
+F_f = 3.\pi.d.\mu.V.C_t.C_d \tag{6}
+$$
+
+Avec $\mu$ la viscosité de l'air (18.10^-6 Pa.s à 20°C), $d$ le diamètre d'une goutte de pluie, $V$ sa vitesse de chute, $C_t$ le coefficient de turbulence et $C_d$ le coefficient de distorsion.
+
+Les petites gouttes de pluie (< 0.05 mm) sont sphériques et le flux d'air autour de celles-ci peut être considérer comme laminaire. Pour ces petites gouttes, les coefficients $C_t$ et $C_d$ sont négligeables et l'égalisation des forces de gravité et de friction revient à la loi de Stokes.
+
+
+$$
+\frac{\rho_e.\pi.d^3.g}{6} = 3.\pi.d.\mu.V 
+$$
+
+$$
+V = \frac{\rho_e.\pi.d^3/6.g}{3.\pi.d.\mu}
+$$
+
+$$
+V = \frac{\rho_e.d^2.g}{18.\mu} \tag{7}
+$$
+
+Les plus larges gouttes (> 0.05 mm) ont une plus grande probabilité de subir des déformations lors de leur chute ce qui augmente leur force de friction. La vitesse terminale ne dépend alors plus directement du carré du diamètre et les coefficients de turbulence et de distorsion $C_t$ et $C_d$ doivent se calculer par itération pour obtenir une vitesse corrigée.
+
+Nous sélectionnons cependant l'approximation de Van Boxel (1998) (c.f. Equation 7) pour calculer la vitesse terminale de gouttes de diamètres > 0.05 mm pour la suite de nos analyses.
+
+# Modélisations
+
+```{r, results = 'asis', include = TRUE, warning = FALSE}
+
+# variables definition
+
+max_level <- 228/30
+g <- 9.81 # m.s^-2
+rho_w = 997 # kg.m^-3
+mu_air <- 1.825*10^-5 #Kg.m^-1.s^-1
+
+d <- seq(0.05*10^-3, 1*10^-3, length = 10) # drops section in meters
+y_g <- seq(5*10^-3, 10*10^-3, length = 10) # rope section in meters
+
+# simulations
+
+v_t <- (g*rho_w*d^2)/(18*mu_air) # m.s^-1
+drop <- data.frame(drop_diameter_m = d, speed = v_t)
+ds <- expand.grid(rope_sections_m = y_g, speed = v_t)
+ds2 <- left_join(ds, drop, by = "speed")
+
+ds2 <- ds2 %>% mutate(n = speed/rope_sections_m,
+                      drop_diameter_mm = drop_diameter_m*1000,
+                      rope_sections_mm = round(rope_sections_m*1000, 2),
+                      drop_diameter_m = as.factor(drop_diameter_m),
+                      drop_diameter_mm = as.factor(round(drop_diameter_mm, 2)))
+
+```
+
+Bien que le nombre de tours par seconde minimal puisse maintenant se calculer de manière exacte au moyen des équations 3, 4 et 7 et pour les sections de cordes fixées, nous nous penchons davantage sur une représentation graphique de différentes simulations de sections de corde $Y_g$ et de diamètres des gouttes $d$. Dans le cadre de ces premières simulations, nous construisons un jeu de données en faisant varier le diamètre des gouttes de pluie entre `r d[1]*10^3` mm et `r d[length(d)]*10^3` mm et la section de la corde à sauter entre `r y_g[1]*10^3` mm et `r y_g[length(y_g)]*10^3` mm (c.f. Figure 3.1).
+
+```{r, results = 'asis', include = TRUE, warning = FALSE, fig.cap = "Nombre de tours par seconde simulés pour différentes sections de cordes et tailles de gouttes.", fig.align="center", out.width='80%'}
+
+# plot the results
+
+ggplot(data = ds2, aes(y = n, x = rope_sections_mm, col = drop_diameter_mm)) + 
+  geom_line() +
+  geom_hline(aes(yintercept = max_level, linetype = "Cen.X record"), colour = 'black') +
+  scale_linetype_manual(name = "Limite",
+                        values = c(2),
+                        guide = guide_legend(override.aes = list(color = c("black")))) +
+  scale_y_log10() +
+  labs(color = "Diamètre gouttes (mm)", 
+     y = "Nombre de tours par seconde", 
+     x = "Diamètre de la corde (mm)") +
+  theme_bw()
+
+```
+
+
+```{r, results = 'asis', include = TRUE, warning = FALSE}
+
+# filter results
+
+ds_pass <- ds2 %>% filter(n < max_level) %>%
+  mutate_if(is.numeric, round, digits = 2) %>%
+  select(-c(rope_sections_m, drop_diameter_m)) %>%
+  mutate(max_level = max_level,
+         drop_diameter_mm = as.numeric(as.character(drop_diameter_mm))) %>%
+  relocate(c(drop_diameter_mm, rope_sections_mm, speed, n, max_level))
+
+# print table
+
+knitr::kable(ds_pass, 
+             format = "html",
+             row.names = FALSE,
+             caption = "Paramètres permettant une vitesse de rotation inférieure au record de Cen Xiaolin.",
+             col.names = c("Diamètre de la goutte (mm)",
+                           "Section Corde (mm)",
+                           "Vitesse de chute (m/s)",
+                           "Tours/seconde",
+                           "Record C.X (tours/sec)")) %>%
+  kable_classic(full_width = F,
+                position = "center",
+                font_size = 14,
+                lightable_options = "basic",
+                html_font = "sans-serif")
+  
+```
+
+Sur base de la figure 3.1 et de la table 3.1, nous pouvons conclure qu'au moins quelques concurrents directs de Cen Xiaolin seraient probablement capables de sauter suffisamment rapidement pour esquiver la chute de gouttes de pluie de 0.05 mm de diamètre, avec une corde de 10 mm de section. Cependant, cette réponse est quelque peu décevante du fait qu'elle restreigne drastiquement la tranche de la population pouvant utiliser une corde à sauter pour remplacer efficacement un parapluie.
+
+Mais essayons de pousser l'exercice plus loin.
+
+A partir des équations 3 et 7, les paramètres principaux que nous pouvons faire varier sont $Y_g$, $d$ et $g$. Certains objets du système solaire ayant des gravités plus faibles que celle de la Terre, imaginons à présent, pour une raison improbable, que les prochains astronautes en mission outre-Terre jugent notre raisonnement de pensée indispensable pour mener à bien leurs prochaines expéditions. Afin de déterminer comment le nombre de tours par seconde $t_r$ serait affecté par différentes valeurs de $g$, nous sélectionnons ici Mercure, la Lune et Mars présentant des gravités inférieures à celle de la Terre. Mercure et Mars présentant des gravités identiques, nous utilisons uniquement Mars pour nos modélisations (c.f. Table 3.2).
+
+
+```{r, results = 'asis', include = TRUE, warning = FALSE}
+
+# define gravities
+
+gravities <- data.frame(objects = c("Mercure", "Venus", "Terre", "Lune", "Mars", "Jupiter", "Saturne", "Uranus", "Neptune"), 
+                        gravity = c(3.71, 8.87, 9.81, 1.62, 3.71, 24.79, 10.44, 8.87, 11.15))
+
+# print table
+
+knitr::kable(gravities, 
+                   format = "html",
+                   row.names = FALSE,
+                   caption = "Gravités sur différents objets du système solaire.",
+                   col.names = c("Objets", "Gravité (m/s^2)")) %>%
+  kable_classic(full_width = F, 
+                font_size = 14,
+                lightable_options = "basic",
+                html_font = "sans-serif")
+
+```
+
+```{r, results = 'asis', include = TRUE, warning = FALSE, fig.cap = "Présentation graphique des simulations.", fig.align="center", out.width='80%'}
+
+# simulations
+
+gravities_ <- gravities %>% filter(objects %in% c("Terre", "Mars", "Lune"))
+g <- gravities_$gravity
+
+ds_f <- data.frame()
+
+for (i in g){
+  
+  v_t <- (i*rho_w*d^2)/(18*mu_air) # m.s^-1
+  drop <- data.frame(drop_diameter_m = d, speed = v_t, gravity = i)
+  ds <- expand.grid(rope_sections_m = y_g, speed = v_t)
+  ds2 <- left_join(ds, drop, by = "speed")
+  
+  ds2 <- ds2 %>% mutate(n = speed/rope_sections_m,
+                        drop_diameter_mm = drop_diameter_m*1000,
+                        rope_sections_mm = round(rope_sections_m*1000, 2),
+                        drop_diameter_m = as.factor(drop_diameter_m),
+                        drop_diameter_mm = as.factor(round(drop_diameter_mm, 2)))
+  
+  ds_f <- rbind(ds2, ds_f)
+  
+}
+
+ds_f <- full_join(ds_f, gravities_, by = "gravity")
+
+# plot the results
+
+ggplot(data = ds_f, aes(y = n, x = rope_sections_mm, col = drop_diameter_mm)) + 
+  geom_line() +
+  geom_hline(aes(yintercept = max_level, linetype = "Cen.X record"), colour = 'black') +
+  scale_linetype_manual(name = "Limite",
+                        values = c(2),
+                        guide = guide_legend(override.aes = list(color = c("black")))) +
+  scale_y_log10() +
+  facet_grid(.~ objects) +
+  
+  labs(color = "Diamètre gouttes (mm)", 
+       y = "Nombre de tours par seconde", 
+       x = "Diamètre de la corde (mm)") +
+  theme_bw()
+
+```
+
+```{r, results = 'asis', include = TRUE, warning = FALSE}
+
+# filter results
+
+ds_pass <- ds_f %>% filter(n < max_level) %>%
+  mutate_if(is.numeric, round, digits = 2) %>%
+  select(-c(rope_sections_m, drop_diameter_m)) %>%
+  mutate(max_level = max_level,
+         drop_diameter_mm = as.numeric(as.character(drop_diameter_mm))) %>%
+  relocate(c(objects, gravity, drop_diameter_mm, rope_sections_mm, speed, n, max_level))
+
+# print table
+
+knitr::kable(ds_pass,
+             format = "html",
+             row.names = FALSE,
+             caption = "Paramètres permettant une vitesse de rotation inférieure au record de Cen Xiaolin.",
+             col.names = c("Objets", "Gravité (m/s^2)", "Diamètre de la goutte (mm)", "Section Corde (mm)", "Vitesse de chute (m/s)", "Tours/seconde", "Record C.X (tours/sec)")) %>%
+  kable_classic(full_width = F,
+                font_size = 14,
+                lightable_options = "basic",
+                html_font = "sans-serif")
+
+```
+
+Ces résultats pour la Lune et Mars sont nettement plus satisfaisants ! Sur la Lune, nous devrions sauter à une fréquence de 1 à 2 tours par seconde en fonction de la section de la corde, ce qui est raisonnable pour des individus actifs. Sur Mars, les conditions restreignent l'utilisation de la corde à sauter aux athlètes les plus expérimentés avec des fréquences entre 3, et 6 tours par seconde en fonction de la section de la corde. Toutefois, le domaine d'application se réduit uniquement à des gouttes de pluies de 0.05 mm de diamètre.
+
+# Conclusions
+
+En conditions terrestres, l'utilisation d'une corde à sauter comme unique outil de dissuasion pluviale semble une solution peu réaliste pour la majorité de la population. Même pour les athlètes performants, cette solution serait envisageable uniquement pour les averses dont la taille des gouttes se limite à 0.05 mm de diamètre.
+
+En conditions lunaires et martiennes, la gravité inférieure à celle de la Terre nous permettrait de réduire significativement la fréquence de rotation de la corde et ce, particulièrement en conditions lunaires avec des fréquences de rotation avoisinant les 2 tours par seconde. La force de gravité restant la variable limitante, seulement les plus petites gouttes de pluie de 0.05 mm permettraient d'obtenir des vitesses terminales suffisamment faibles pour réduire la fréquence de rotation minimale.
+
+# Références
+
+Van Boxel, J. (1998). Numerical model for the fall speed of raindrops in a rainfall simulator. I.C.E. Special Report, 1998/1, 77-85.
