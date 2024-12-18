@@ -18,14 +18,11 @@ Happy reading!
 
 [**Skipping rain**](skipping_rain.html): How fast does one need to spin a skipping rope to avoid being soaked by the rain.
 
-**Sudoku**: Work in progress | Computation of the probability of convergence as a function of the number of pre-filled cells in a Sudoku board.
 
-**Covid-19 maps**: Work in progress | Some pleasing visualizations of the pandemic data using geom_tile.
+### Python projects
 
-### Interview questions
+[**Travel times**](distance_matrix_api.html): Building a map of travel times in Brussels using a distance matrix API.
 
-This section is dedicated to short but interesting interview questions I came across during my studies, exams or job interviews.
-
-[**Pascal's triangle**](triangle.html): Building a Pascal's triangle from scratch in Python.
+[**Pascal's triangle**](triangle.html): Building a Pascal's triangle from scratch.
 
 

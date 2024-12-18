@@ -1,0 +1,3 @@
+C:/Data/Travail/bf_datascience_202407/bfdata
+C:/Data/Travail/bf_datascience_202407/datascience202407
+C:/Data/Privé/IdeasForScienceProjects/TravelMaps/distancematrixapi

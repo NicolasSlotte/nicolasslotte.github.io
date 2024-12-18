@@ -1,0 +1,726 @@
+---
+title: "Travel maps"
+subtitle: "Building a map of travel times using a distance matrix API"
+author: "Nicolas Slotte"
+date: "First Iteration | August - December 2024"
+output:
+  bookdown::html_document2:
+    number_sections: true
+    css: "justify.css"
+    code_folding: show
+    toc: true
+    toc_depth: 2
+    toc_float: true
+---
+
+
+```{r setup, results = FALSE, message = FALSE, warning = FALSE}
+
+# initiate
+
+rm(list = ls())
+
+# packages
+
+library(bookdown)
+library(reticulate)
+library(tidyverse)
+library(kableExtra)
+library(knitr)
+library(tinytex)
+
+```
+
+# Introduction
+
+One of the great features of Google Maps is that it can be really useful to plan your route between any starting and end point. However, it only allows to display a few different suggested routes at once, in order for the user to wisely select which one might be better without being drowned in irrelevant information. So, over a year ago a colleague and I wandered **"Could we instead choose a route based on a path of least traffic-resistance?"** For those who are familiar with bike packing or just those not liking riding up hills, the idea is very similar to selecting a route that minimizes the variation in elevation for a fixed horizontal distance (c.f. Figure 1.1). Hence, this projects focuses on creating an isochrone map (= a map that links the points of equal duration together) of travel times in Brussels for different means of transportation and compare their efficiency depending on the travel distance.
+
+```{r, echo = FALSE, eval = TRUE, warning = FALSE, message = FALSE}
+
+# define paths
+
+venv_path <- read.table("img/dmapi_paths.txt")[1, 1]
+path <- read.table("img/dmapi_paths.txt")[2, 1]
+pathimg <- read.table("img/dmapi_paths.txt")[3, 1]
+
+```
+
+```{r, echo=FALSE, fig.align="center", out.width="50%", fig.cap="Example of a simple topographic map where one can minimize the variations in elevation to reach a specific destination."}
+
+knitr::include_graphics(paste0(pathimg, "/", "montblanc.png"))
+
+```
+
+# Methodology
+
+This original project was initially developed using Visual Studio Code and Python as part of a Python training during the summer 2024. As the whole structure of this website is build on RMarkdown, we intensively used the reticulate package to embed our existing python script into a RMarkdown document. The different steps of this project can be summarized as follows (i) generate a distance matrix of geographical coordinates, starting and ending points (ii) find a API that allows to request travel times from our distance matrix (and since we are not yet funded by any organization whatsoever, for free) (ii) clean the data (iii) plot a color map of the different travel times.
+
+```{r, echo = FALSE, results = FALSE}
+
+# configure python virtual environment
+
+use_virtualenv(virtualenv = venv_path)
+virtualenv_list()
+
+```
+
+```{python, eval = TRUE, include = TRUE}
+
+# virtual env path
+
+with open("img/dmapi_paths.txt", 'r') as file:
+    venv_path = file.readline().strip('\n')
+
+# stored data path
+
+with open("img/dmapi_paths.txt", 'r') as file:
+    path = file.read().split('\n')[1]
+
+```
+
+```{python}
+
+# python packages
+
+import pandas as pd
+import numpy as np
+import requests
+import json
+import statistics
+import warnings
+from mpl_toolkits.basemap import Basemap
+
+import matplotlib
+matplotlib.use('Agg')  
+import matplotlib.pyplot as plt
+from matplotlib import ticker
+from matplotlib.colors import ListedColormap, BoundaryNorm
+import matplotlib.patches as mpatches
+import seaborn as sns
+
+from datetime import datetime
+from operator import contains
+
+```
+
+## Distance matrix
+
+There are many different ways of building a map of travel times. In our case, we started by building a equidistant grid of geographical coordinates where each point consist in a couple $(Latitude, Longitude)$, hereafter the distance matrix.
+
+Due to the limitations of our API free plan, we constructed our distance matrix with a 100 points which we considered being enough for this toy project. The starting point was arbitrarily defined as Rue saint Bernard, 45, Saint Gilles, Brussels, which is the closest existing address to the center of our grid. The firsts and lasts lines of the distance matrix are presented in table 2.1.
+
+```{python, eval = TRUE}
+
+# start and end coordinates
+
+latmin = 50.761402
+latmax = 50.916179
+
+longmin = 4.236645
+longmax = 4.490394
+
+# grid 10 times 10
+
+num = 10
+latlist = np.linspace(latmin, latmax, num)
+longlist = np.linspace(longmin, longmax, num)
+
+# tuple list
+
+coords = [(lat, long) for lat in latlist for long in longlist]
+
+# pandas data frame
+
+coords_df = pd.DataFrame(coords, columns=['lat', 'long'])
+
+# define the starting point (index = 44)
+# y = 50.827735
+# x = 4.34539457
+
+```
+
+
+```{r, include = TRUE, eval = TRUE}
+
+# in R: gather lines for print
+
+disp <- rbind(head(py$coords_df), tail(py$coords_df))
+
+# print table
+
+knitr::kable(disp, 
+             format = "html",
+             row.names = FALSE,
+             caption = "Overview of the distance matrix",
+             col.names = c("Latitude", "Longitude")) %>%
+  kable_classic(full_width = F,
+                position = "center",
+                font_size = 14,
+                lightable_options = "basic",
+                html_font = "sans-serif")
+```
+
+## Map the coordinates
+
+In order to plot those Latitude, Longitude couples onto a map, we need (i) a first layer that will be used as a frame to plot our points at the correct coordinates (ii) a region layer to see the municipality borders of the city (iii) the latitude longitude couples from our distance matrix.
+
+```{python, warning=FALSE, results='hide', message=FALSE, fig.keep='all', fig.align="center", fig.cap= "Latitude longitude couples from our distance matrix displayed onto a Brussels map."}
+
+# just like magic
+
+warnings.filterwarnings('ignore')
+
+# Clear plot
+
+plt.clf()
+
+# create map
+
+plt.figure(figsize=(10,8))
+
+map = Basemap(
+  
+    # Projection
+    
+    projection='aeqd',
+
+    # Map center
+    
+    lat_0=statistics.median(coords_df["lat"]),
+    lon_0=statistics.median(coords_df["long"]),
+
+    # Map borders
+    
+    llcrnrlat=min(coords_df["lat"]),
+    urcrnrlat=max(coords_df["lat"]),
+    llcrnrlon=min(coords_df["long"]),
+    urcrnrlon=max(coords_df["long"]),
+    
+    # Resolution
+    
+    resolution='i'
+)
+
+# Second layer: region layer
+
+map.readshapefile(shapefile=f"{path}/gadm41_BEL_shp/gadm41_BEL_4", name="shp0")
+
+# Frame aesthetics
+
+map.drawmapboundary(fill_color='aqua')
+map.drawcoastlines(linewidth=0.5)
+map.fillcontinents(color='white', lake_color='aqua')
+
+# Third layer: plot the distance matrix
+
+x, y = map(coords_df['long'].values, coords_df['lat'].values)  # Projected coordinates
+map.scatter(x, y, 3, marker='o', color='k')
+
+# Add parallels and meridians
+
+# Define intervals for latitudes and longitudes
+
+lat_min, lat_max = min(coords_df["lat"]), max(coords_df["lat"])
+lon_min, lon_max = min(coords_df["long"]), max(coords_df["long"])
+
+# Draw parallels and meridians
+
+lat_interval = (lat_max - lat_min) / 5
+lon_interval = (lon_max - lon_min) / 4
+
+parallels = np.arange(lat_min, lat_max + lat_interval, lat_interval)
+meridians = np.arange(lon_min, lon_max + lon_interval, lon_interval)
+
+map.drawparallels(parallels, labels=[1, 0, 0, 0], linewidth=0.5, color='gray', fontsize=8)
+map.drawmeridians(meridians, labels=[0, 0, 0, 1], linewidth=0.5, color='gray', fontsize=8)
+
+# Add labels and title
+
+plt.xlabel("Longitude", labelpad = 15)
+plt.ylabel("Latitude", labelpad = 50)
+
+plt.show()
+plt.close()
+
+```
+
+## API request
+
+Now that we have established our distance matrix and that we are able to plot it onto a map, the next step consist in calling an API and request the travel time between the different points of our distance matrix for specific conditions. In our case, we want to compute the travel time for every combination of latitude longitude couple with the same starting point. Each $(start, stop)$ pair is defined as follows.
+
+$$
+(Start, Stop)_i = (Lat, Long)_{start} \to (Lat, Long)_{stop_i} \ \forall \ i \in grid \tag{1}
+$$
+We used the API from the service distancematrix.ai and submitted our request for each $(start, stop)$ pairs as a concatenated string along with other specifications as the transportation mode and the departure time. Each destination from the *url_dest* will be considered as a single request by the API. In our case, the extraction has already been done earlier in August 2024, so we won't be running the following section which is displayed for demonstration purposes. Instead, we will load our previsouly formatted and saved datasets.
+
+```{python, eval = FALSE}
+
+# api key
+
+with open('api_key.txt', 'r') as file:
+    key = file.read()
+    
+# specifications for driving mode
+
+len(coords)
+orig_index = 44
+orig = coords.pop(orig_index)
+len(coords)
+orig_lat = str(orig[0])
+orig_long = str(orig[1])
+destinations = "|".join([f"{c[0]},{c[1]}" for c in coords])
+mode = "driving"
+dtime = "now"
+
+# url specifications
+
+url_base = "https://api.distancematrix.ai/maps/api/distancematrix/json"
+url_orig = f"origins={orig_lat},{orig_long}"
+url_dest = f"destinations={destinations}"
+url_key = f"key={key}"
+url_mode = f"mode={mode}"
+url_dtime = f"departure_time={dtime}"
+url = f"{url_base}?{url_orig}&{url_dest}&{url_mode}&{url_dtime}&{url_key}"
+
+# submit request
+
+rtime = datetime.now()
+response = requests.get(url)
+data = json.loads(response.text)
+
+```
+
+## Data wrangling
+
+Once the data is extracted from the API and saved as JSON, we perform a few data wrangling operations in order to obtain a clean pandas data frame. The following section focuses on extracting the relevant information and stores it into tidy format with variables such as distance, duration, latitude, longitude, mode etc. For some of our requests, the API returned a failed output which is likely due to the fact that some of the latitude longitude couples from our distance matrix do not return a valid address for the API to work with. Those failed requests were removed from our dataset.
+
+```{python, eval = FALSE, include = FALSE, warnings = FALSE, errors = FALSE}
+
+# load existing dataset
+    
+with open('20240808_driving.txt', 'r', encoding='latin-1') as file:
+    data = file.read()
+  
+data = data.replace("'", "\"")
+data = json.loads(data)
+
+```
+
+```{python, eval = FALSE, include = TRUE}
+
+# convert dict to data frame
+
+dlist = data["rows"]
+dlist = dlist[0]
+dlist = dlist["elements"]
+
+test = pd.DataFrame.from_dict(dlist)
+
+def extract(cell):
+    if not isinstance(cell, dict):
+        return cell
+    return cell['value']
+
+test = test.map(extract, na_action='ignore')
+
+# cleaning and formatting
+
+test[['orig_lat', 'orig_long']] = test['origin'].str.split(',', n=1, expand=True)
+test[['dest_lat', 'dest_long']] = test['destination'].str.split(',', n=1, expand=True)
+
+test = test[test["status"] == "OK"]
+
+test = test.drop("origin", axis=1)
+test = test.drop("destination", axis=1)
+
+test["distance_km"] = test["distance"] / 1E3
+test["duration_min"] = test["duration"] / 60
+
+test["mode"] = "driving"
+test["exe_time"] = rtime
+
+test = test.dropna()
+
+# save as csv
+
+test.to_csv('extract.csv', index=False)
+
+```
+
+Our formatted datasets can be loaded and displayed into our environment (c.f. Table 2.2).
+
+```{python, include = TRUE, eval = TRUE}
+
+# load the saved datasets
+
+bike = "20240808_bicycling_df.csv"
+car = "20240808_driving_df.csv"
+
+bike_df = pd.read_csv(f"{path}/{bike}")
+car_df = pd.read_csv(f"{path}/{car}")
+
+# concatenation
+
+df = pd.concat([bike_df, car_df])
+
+```
+
+```{r, include = TRUE, eval = TRUE, warning = FALSE}
+
+# in R: print table
+
+disp <- head(py$df) %>%
+  select(distance_km, duration_min, orig_lat, orig_long, dest_lat, dest_long, mode)
+
+knitr::kable(disp, 
+             format = "html",
+             row.names = FALSE,
+             caption = "Results from the API") %>%
+  kable_classic(full_width = F,
+                position = "center",
+                font_size = 14,
+                lightable_options = "basic",
+                html_font = "sans-serif")
+
+```
+
+# Results
+
+## Descriptive Maps
+
+As the previous map in figure 2.1, we need the same structure to plot those extracted data. We need (i) a first layer that will be used as a frame to plot our points (ii) a region layer to see the municipality borders of the city (iii) the API dataset which contains the duration for each start stop pairs. We used the $contourf$ function which allows to display a color value of a variable z for each x, y pairs. This is a convenient 2D option to a 3D problem since we do not need to add another axis. In our case the x, y pairs will be our destination latitude longitude couple from our distance matrix and the z values will be the duration extracted from the API.
+
+```{python, warning=FALSE, results='hide', message=FALSE, fig.keep='all'}
+
+# just like magic
+
+warnings.filterwarnings('ignore')
+
+# fixed color scale
+
+levels = ticker.MaxNLocator(nbins=10).tick_values(min(df["duration_min"]), max(df["duration_min"]))
+cmap = plt.colormaps['Blues']
+norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
+
+# Define the function
+
+def mapthis(df, mode):
+  
+    # clear plot
+    
+    plt.clf()
+
+    # extract x, y, z as numpy arrays
+    
+    x, y = df["dest_long"].values, df["dest_lat"].values
+    z = df["duration_min"].values
+
+    # create map
+    
+    fig, ax = plt.subplots(figsize=(10, 8))  # Control figure size
+
+    map = Basemap(
+        projection='aeqd',
+        
+        lat_0=np.median(y),  # Map center (latitude)
+        lon_0=np.median(x),  # Map center (longitude)
+        
+        llcrnrlat=min(y),  # Lower-left latitude
+        urcrnrlat=max(y),  # Upper-right latitude
+        llcrnrlon=min(x),  # Lower-left longitude
+        urcrnrlon=max(x),  # Upper-right longitude
+        
+        resolution='i',
+        ax=ax
+    )
+
+    # Map shapefile
+    
+    map.readshapefile(f"{path}/gadm41_BEL_shp/gadm41_BEL_4", name="shp0")
+
+    # Map aesthetics
+    
+    map.drawmapboundary(fill_color='aqua')
+    map.drawcoastlines(linewidth=0.5)
+    map.fillcontinents(color='white', lake_color='aqua')
+    
+    # Map contour plot
+    
+    x_map, y_map = map(x, y)  # Convert lat/lon to map projection coordinates
+    isochr = map.contourf(
+        x_map, y_map, z,
+        tri=True, cmap=cmap, norm=norm, latlon=False
+    )
+    fig.colorbar(isochr, label="Duration (minutes)")
+
+    # Add parallels and meridians
+    
+    lat_min, lat_max = min(y), max(y)
+    lon_min, lon_max = min(x), max(x)
+    lat_interval = (lat_max - lat_min) / 5
+    lon_interval = (lon_max - lon_min) / 4
+
+    parallels = np.arange(lat_min, lat_max + lat_interval, lat_interval)
+    meridians = np.arange(lon_min, lon_max + lon_interval, lon_interval)
+
+    map.drawparallels(parallels, labels=[1, 0, 0, 0], linewidth=0.5, color='gray', fontsize=8)
+    map.drawmeridians(meridians, labels=[0, 0, 0, 1], linewidth=0.5, color='gray', fontsize=8)
+
+    # Labels for longitude and latitude axes
+    
+    plt.xlabel("Longitude", labelpad=15)
+    plt.ylabel("Latitude", labelpad=50)
+    plt.title(f"Brussels Isochrones Map: by {mode}")
+
+    # Show plot
+    
+    plt.show()
+    plt.close()
+```
+
+
+```{python, warning=FALSE, results='hide', message=FALSE, fig.keep='all', fig.align="center", fig.cap= "Brussels isochrone maps by bike"}
+
+# call the function
+
+mapthis(bike_df, "bike")
+
+```
+
+
+```{python, warning=FALSE, results='hide', message=FALSE, fig.keep='all', fig.align="center", fig.cap= "Brussels isochrone maps by car"}
+
+# call the function
+
+mapthis(car_df, "car")
+
+```
+
+## Transport efficiency
+
+The first clear observation we can make when looking at those two maps is that traveling by car seems more time efficient than travelling by car for the same destination since the color code seems lower for the car facet. However, an important element we need to point out is that for the same geographical destinations, the routes will be different depending on the transportation mode as the API focuses on selecting the most time efficient path. In order to illustrate that feature, here is a plot that shows the distances by bike and car compared to a 1:1 line (c.f. Figure 3.3).
+
+```{python, warning=FALSE, results='hide', message=FALSE, fig.keep='all', fig.align="center", fig.cap= "1:1 travel distances"}
+
+# transpose the datasets
+
+bike_df_ = bike_df[["distance_km", "duration_min", "dest_lat", "dest_long", "orig_lat", "orig_long"]]
+bike_df_ = bike_df_.rename(columns={"distance_km": "b_distance_km", "duration_min": "b_duration_min"})
+car_df_ = car_df[["distance_km", "duration_min", "dest_lat", "dest_long"]]
+car_df_ = car_df_.rename(columns={"distance_km": "c_distance_km", "duration_min": "c_duration_min"})
+df_1 = pd.merge(bike_df_, car_df_, on=("dest_lat", "dest_long"), how='inner')
+
+# plot the 1:1 line
+
+max_dist = max(df["distance_km"])
+line = [0, max_dist]
+
+plt.clf()
+plt.figure(figsize=(10,8))
+plt.plot(df_1["b_distance_km"], df_1["c_distance_km"], ".b")
+plt.plot(line, line, "--b")
+plt.ylabel("Car travel distance (km)")
+plt.xlabel("Bike travel distance (km)")
+plt.show()
+plt.close()
+
+```
+Most points don't fall on the 1:1 line, confirming the routes selected by the API are chosen based on time efficiency. Hence, we cannot use a model that takes the rough travel distance into account with the purpose of finding the optimum time for a specified destination. We should focus on the optimum time required to reach a specific destination.
+
+## Loss functions
+
+Instead, we can also compare the differences of time efficiency in terms of time and speed loss for every coordinate. This will allow a more appealing comparison between the two means of transportation, without relying on heavy processing. We define the loss functions as follows.
+
+time loss function:
+
+$$
+Loss\ Time_{Lat, Long} = \left(\frac{duration\ by\ bike}{duration\ by\ car}\right)_{Lat, Long} \tag{2}
+$$
+
+Speed loss function:
+
+$$
+Loss\ Speed_{Lat, Long} = \left(\frac{(distance/duration)\ by\ bike}{(distance/duration)\ by\ car}\right)_{Lat, Long} \tag{3}
+$$
+
+### Time loss
+
+```{python, eval = TRUE, warning=FALSE, results='hide', message=FALSE, fig.keep='all', fig.align="center", fig.cap= "Isochrone time loss map"}
+
+# time loss
+
+df_1["time_loss"] = df_1["b_duration_min"]/df_1["c_duration_min"]
+
+# fixed color scale
+
+levels = ticker.MaxNLocator(nbins=10).tick_values(min(df_1["time_loss"]), max(df_1["time_loss"]))
+cmap = plt.colormaps['RdPu']
+norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
+
+# clear plot
+
+plt.clf()
+
+# extract x, y, z as numpy arrays
+
+x, y = df_1["dest_long"].values, df_1["dest_lat"].values
+z = df_1["time_loss"].values
+
+# create map
+
+fig, ax = plt.subplots(figsize=(10, 8))  # Control figure size
+
+map = Basemap(
+    projection='aeqd',
+    
+    lat_0=np.median(y),  # Map center (latitude)
+    lon_0=np.median(x),  # Map center (longitude)
+    
+    llcrnrlat=min(y),  # Lower-left latitude
+    urcrnrlat=max(y),  # Upper-right latitude
+    llcrnrlon=min(x),  # Lower-left longitude
+    urcrnrlon=max(x),  # Upper-right longitude
+    
+    resolution='i',
+    ax=ax
+)
+
+# Map shapefile
+
+map.readshapefile(f"{path}/gadm41_BEL_shp/gadm41_BEL_4", name="shp0")
+
+# Map aesthetics
+
+map.drawmapboundary(fill_color='aqua')
+map.drawcoastlines(linewidth=0.5)
+map.fillcontinents(color='white', lake_color='aqua')
+
+# Map contour plot
+
+x_map, y_map = map(x, y)  # Convert lat/lon to map projection coordinates
+isochr = map.contourf(
+    x_map, y_map, z,
+    tri=True, cmap=cmap, norm=norm, latlon=False
+)
+fig.colorbar(isochr, label="Time loss")
+
+# Add parallels and meridians
+
+lat_min, lat_max = min(y), max(y)
+lon_min, lon_max = min(x), max(x)
+lat_interval = (lat_max - lat_min) / 5
+lon_interval = (lon_max - lon_min) / 4
+
+parallels = np.arange(lat_min, lat_max + lat_interval, lat_interval)
+meridians = np.arange(lon_min, lon_max + lon_interval, lon_interval)
+
+map.drawparallels(parallels, labels=[1, 0, 0, 0], linewidth=0.5, color='gray', fontsize=8)
+map.drawmeridians(meridians, labels=[0, 0, 0, 1], linewidth=0.5, color='gray', fontsize=8)
+
+# Labels for longitude and latitude axes
+
+plt.xlabel("Longitude", labelpad=15)
+plt.ylabel("Latitude", labelpad=50)
+
+# Show plot
+
+plt.show()
+plt.close()
+
+```
+
+### Speed loss
+
+```{python, eval = TRUE, warning=FALSE, results='hide', message=FALSE, fig.keep='all', fig.align="center", fig.cap= "Isochrone speed loss map"}
+
+# speed loss
+
+df_1["speed_loss"] = (df_1["b_distance_km"]/df_1["b_duration_min"])/(df_1["c_distance_km"]/df_1["c_duration_min"])
+
+# fixed color scale
+
+levels = ticker.MaxNLocator(nbins=10).tick_values(min(df_1["speed_loss"]), max(df_1["speed_loss"]))
+cmap = plt.colormaps['RdPu']
+norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
+
+# clear plot
+
+plt.clf()
+
+# extract x, y, z as numpy arrays
+
+x, y = df_1["dest_long"].values, df_1["dest_lat"].values
+z = df_1["speed_loss"].values
+
+# create map
+
+fig, ax = plt.subplots(figsize=(10, 8))  # Control figure size
+
+map = Basemap(
+    projection='aeqd',
+    
+    lat_0=np.median(y),  # Map center (latitude)
+    lon_0=np.median(x),  # Map center (longitude)
+    
+    llcrnrlat=min(y),  # Lower-left latitude
+    urcrnrlat=max(y),  # Upper-right latitude
+    llcrnrlon=min(x),  # Lower-left longitude
+    urcrnrlon=max(x),  # Upper-right longitude
+    
+    resolution='i',
+    ax=ax
+)
+
+# Map shapefile
+
+map.readshapefile(f"{path}/gadm41_BEL_shp/gadm41_BEL_4", name="shp0")
+
+# Map aesthetics
+
+map.drawmapboundary(fill_color='aqua')
+map.drawcoastlines(linewidth=0.5)
+map.fillcontinents(color='white', lake_color='aqua')
+
+# Map contour plot
+
+x_map, y_map = map(x, y)  # Convert lat/lon to map projection coordinates
+isochr = map.contourf(
+    x_map, y_map, z,
+    tri=True, cmap=cmap, norm=norm, latlon=False
+)
+fig.colorbar(isochr, label="Speed loss")
+
+# Add parallels and meridians
+
+lat_min, lat_max = min(y), max(y)
+lon_min, lon_max = min(x), max(x)
+lat_interval = (lat_max - lat_min) / 5
+lon_interval = (lon_max - lon_min) / 4
+
+parallels = np.arange(lat_min, lat_max + lat_interval, lat_interval)
+meridians = np.arange(lon_min, lon_max + lon_interval, lon_interval)
+
+map.drawparallels(parallels, labels=[1, 0, 0, 0], linewidth=0.5, color='gray', fontsize=8)
+map.drawmeridians(meridians, labels=[0, 0, 0, 1], linewidth=0.5, color='gray', fontsize=8)
+
+# Labels for longitude and latitude axes
+
+plt.xlabel("Longitude", labelpad=15)
+plt.ylabel("Latitude", labelpad=50)
+
+# Show plot
+
+plt.show()
+plt.close()
+
+```
+
+# Conclusions
+
+* The isochrone maps created and especially the time and speed loss maps appear to be some quite useful visual aid for finding the path of optimum time efficiency when comparing the transportation modes for a specific destination.
+
+* An interesting addition for a next iteration of that project would be to produce a dynamic map in a Shiny or Dash application that provide a direct map-based API request for any starting point selected by the user.
+
+* Another addition for a next version would be to focus on a more in-depth interpretation of the API results.
+
+

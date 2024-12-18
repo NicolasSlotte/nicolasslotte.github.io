@@ -1,0 +1,18 @@
+h1:introduction Introduction
+h1:methodology Methodology
+h2:distance-matrix Distance matrix
+tab:include Overview of the distance matrix
+h2:map-the-coordinates Map the coordinates
+h2:api-request API request
+h2:data-wrangling Data wrangling
+tab:include Results from the API
+h1:results Results
+h2:descriptive-maps Descriptive Maps
+h2:transport-efficiency Transport efficiency
+h2:loss-functions Loss functions
+h3:time-loss Time loss
+fig:eval Isochrone time loss map
+h3:speed-loss Speed loss
+fig:eval Isochrone speed loss map
+h1:conclusions Conclusions
+

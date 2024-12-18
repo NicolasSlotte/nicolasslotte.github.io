@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Nicolas Slotte" />
+
+
+<title>Travel maps</title>
+
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.4.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet" />
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+<link rel="stylesheet" href="justify.css" type="text/css" />
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Nicolas Slotte</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/NicolasSlotte">
+    <span class="fab fa-github fa-lg"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://www.linkedin.com/in/nicolas-slotte-2065551b8/">
+    <span class="fab fa-linkedin fa-lg"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Travel maps</h1>
+<h3 class="subtitle">Building a map of travel times using a distance matrix API</h3>
+<h4 class="author">Nicolas Slotte</h4>
+<h4 class="date">First Iteration | August - December 2024</h4>
+
+</div>
+
+
+<pre class="r"><code># initiate
+
+rm(list = ls())
+
+# packages
+
+library(bookdown)
+library(reticulate)
+library(tidyverse)
+library(kableExtra)
+library(knitr)
+library(tinytex)</code></pre>
+<div id="introduction" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Introduction</h1>
+<p>One of the great features of Google Maps is that it can be really useful to plan your route between any starting and end point. However, it only allows to display a few different suggested routes at once, in order for the user to wisely select which one might be better without being drowned in irrelevant information. So, over a year ago a colleague and I wandered <strong>“Could we instead choose a route based on a path of least traffic-resistance?”</strong> For those who are familiar with bike packing or just those not liking riding up hills, the idea is very similar to selecting a route that minimizes the variation in elevation for a fixed horizontal distance (c.f. Figure 1.1). Hence, this projects focuses on creating an isochrone map (= a map that links the points of equal duration together) of travel times in Brussels for different means of transportation and compare their efficiency depending on the travel distance.</p>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-2"></span>
+<img src="../../../TravelMaps/distancematrixapi/montblanc.png" alt="Example of a simple topographic map where one can minimize the variations in elevation to reach a specific destination." width="50%" />
+<p class="caption">
+Figure 1.1: Example of a simple topographic map where one can minimize the variations in elevation to reach a specific destination.
+</p>
+</div>
+</div>
+<div id="methodology" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Methodology</h1>
+<p>This original project was initially developed using Visual Studio Code and Python as part of a Python training during the summer 2024. As the whole structure of this website is build on RMarkdown, we intensively used the reticulate package to embed our existing python script into a RMarkdown document. The different steps of this project can be summarized as follows (i) generate a distance matrix of geographical coordinates, starting and ending points (ii) find a API that allows to request travel times from our distance matrix (and since we are not yet funded by any organization whatsoever, for free) (ii) clean the data (iii) plot a color map of the different travel times.</p>
+<pre class="python"><code>
+# virtual env path
+
+with open(&quot;img/dmapi_paths.txt&quot;, &#39;r&#39;) as file:
+    venv_path = file.readline().strip(&#39;\n&#39;)
+
+# stored data path
+
+with open(&quot;img/dmapi_paths.txt&quot;, &#39;r&#39;) as file:
+    path = file.read().split(&#39;\n&#39;)[1]</code></pre>
+<pre class="python"><code>
+# python packages
+
+import pandas as pd
+import numpy as np
+import requests
+import json
+import statistics
+import warnings
+from mpl_toolkits.basemap import Basemap
+
+import matplotlib
+matplotlib.use(&#39;Agg&#39;)  
+import matplotlib.pyplot as plt
+from matplotlib import ticker
+from matplotlib.colors import ListedColormap, BoundaryNorm
+import matplotlib.patches as mpatches
+import seaborn as sns
+
+from datetime import datetime
+from operator import contains</code></pre>
+<div id="distance-matrix" class="section level2" number="2.1">
+<h2><span class="header-section-number">2.1</span> Distance matrix</h2>
+<p>There are many different ways of building a map of travel times. In our case, we started by building a equidistant grid of geographical coordinates where each point consist in a couple <span class="math inline">\((Latitude, Longitude)\)</span>, hereafter the distance matrix.</p>
+<p>Due to the limitations of our API free plan, we constructed our distance matrix with a 100 points which we considered being enough for this toy project. The starting point was arbitrarily defined as Rue saint Bernard, 45, Saint Gilles, Brussels, which is the closest existing address to the center of our grid. The firsts and lasts lines of the distance matrix are presented in table 2.1.</p>
+<pre class="python"><code>
+# start and end coordinates
+
+latmin = 50.761402
+latmax = 50.916179
+
+longmin = 4.236645
+longmax = 4.490394
+
+# grid 10 times 10
+
+num = 10
+latlist = np.linspace(latmin, latmax, num)
+longlist = np.linspace(longmin, longmax, num)
+
+# tuple list
+
+coords = [(lat, long) for lat in latlist for long in longlist]
+
+# pandas data frame
+
+coords_df = pd.DataFrame(coords, columns=[&#39;lat&#39;, &#39;long&#39;])
+
+# define the starting point (index = 44)
+# y = 50.827735
+# x = 4.34539457</code></pre>
+<pre class="r"><code># in R: gather lines for print
+
+disp &lt;- rbind(head(py$coords_df), tail(py$coords_df))
+
+# print table
+
+knitr::kable(disp, 
+             format = &quot;html&quot;,
+             row.names = FALSE,
+             caption = &quot;Overview of the distance matrix&quot;,
+             col.names = c(&quot;Latitude&quot;, &quot;Longitude&quot;)) %&gt;%
+  kable_classic(full_width = F,
+                position = &quot;center&quot;,
+                font_size = 14,
+                lightable_options = &quot;basic&quot;,
+                html_font = &quot;sans-serif&quot;)</code></pre>
+<table class=" lightable-classic" style="font-size: 14px; font-family: sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption style="font-size: initial !important;">
+<span id="tab:unnamed-chunk-7">Table 2.1: </span>Overview of the distance matrix
+</caption>
+<thead>
+<tr>
+<th style="text-align:right;">
+Latitude
+</th>
+<th style="text-align:right;">
+Longitude
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+50.76140
+</td>
+<td style="text-align:right;">
+4.236645
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+50.76140
+</td>
+<td style="text-align:right;">
+4.264839
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+50.76140
+</td>
+<td style="text-align:right;">
+4.293034
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+50.76140
+</td>
+<td style="text-align:right;">
+4.321228
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+50.76140
+</td>
+<td style="text-align:right;">
+4.349422
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+50.76140
+</td>
+<td style="text-align:right;">
+4.377617
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+50.91618
+</td>
+<td style="text-align:right;">
+4.349422
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+50.91618
+</td>
+<td style="text-align:right;">
+4.377617
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+50.91618
+</td>
+<td style="text-align:right;">
+4.405811
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+50.91618
+</td>
+<td style="text-align:right;">
+4.434005
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+50.91618
+</td>
+<td style="text-align:right;">
+4.462200
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+50.91618
+</td>
+<td style="text-align:right;">
+4.490394
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="map-the-coordinates" class="section level2" number="2.2">
+<h2><span class="header-section-number">2.2</span> Map the coordinates</h2>
+<p>In order to plot those Latitude, Longitude couples onto a map, we need (i) a first layer that will be used as a frame to plot our points at the correct coordinates (ii) a region layer to see the municipality borders of the city (iii) the latitude longitude couples from our distance matrix.</p>
+<pre class="python"><code># just like magic
+
+warnings.filterwarnings(&#39;ignore&#39;)
+
+# Clear plot
+
+plt.clf()
+
+# create map
+
+plt.figure(figsize=(10,8))
+
+map = Basemap(
+  
+    # Projection
+    
+    projection=&#39;aeqd&#39;,
+
+    # Map center
+    
+    lat_0=statistics.median(coords_df[&quot;lat&quot;]),
+    lon_0=statistics.median(coords_df[&quot;long&quot;]),
+
+    # Map borders
+    
+    llcrnrlat=min(coords_df[&quot;lat&quot;]),
+    urcrnrlat=max(coords_df[&quot;lat&quot;]),
+    llcrnrlon=min(coords_df[&quot;long&quot;]),
+    urcrnrlon=max(coords_df[&quot;long&quot;]),
+    
+    # Resolution
+    
+    resolution=&#39;i&#39;
+)
+
+# Second layer: region layer
+
+map.readshapefile(shapefile=f&quot;{path}/gadm41_BEL_shp/gadm41_BEL_4&quot;, name=&quot;shp0&quot;)
+
+# Frame aesthetics
+
+map.drawmapboundary(fill_color=&#39;aqua&#39;)
+map.drawcoastlines(linewidth=0.5)
+map.fillcontinents(color=&#39;white&#39;, lake_color=&#39;aqua&#39;)
+
+# Third layer: plot the distance matrix
+
+x, y = map(coords_df[&#39;long&#39;].values, coords_df[&#39;lat&#39;].values)  # Projected coordinates
+map.scatter(x, y, 3, marker=&#39;o&#39;, color=&#39;k&#39;)
+
+# Add parallels and meridians
+
+# Define intervals for latitudes and longitudes
+
+lat_min, lat_max = min(coords_df[&quot;lat&quot;]), max(coords_df[&quot;lat&quot;])
+lon_min, lon_max = min(coords_df[&quot;long&quot;]), max(coords_df[&quot;long&quot;])
+
+# Draw parallels and meridians
+
+lat_interval = (lat_max - lat_min) / 5
+lon_interval = (lon_max - lon_min) / 4
+
+parallels = np.arange(lat_min, lat_max + lat_interval, lat_interval)
+meridians = np.arange(lon_min, lon_max + lon_interval, lon_interval)
+
+map.drawparallels(parallels, labels=[1, 0, 0, 0], linewidth=0.5, color=&#39;gray&#39;, fontsize=8)</code></pre>
+<pre class="python"><code>map.drawmeridians(meridians, labels=[0, 0, 0, 1], linewidth=0.5, color=&#39;gray&#39;, fontsize=8)</code></pre>
+<pre class="python"><code># Add labels and title
+
+plt.xlabel(&quot;Longitude&quot;, labelpad = 15)
+plt.ylabel(&quot;Latitude&quot;, labelpad = 50)
+
+plt.show()</code></pre>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-8"></span>
+<img src="distance_matrix_api_files/figure-html/unnamed-chunk-8-1.png" alt="Latitude longitude couples from our distance matrix displayed onto a Brussels map." width="960" />
+<p class="caption">
+Figure 2.1: Latitude longitude couples from our distance matrix displayed onto a Brussels map.
+</p>
+</div>
+<pre class="python"><code>plt.close()</code></pre>
+</div>
+<div id="api-request" class="section level2" number="2.3">
+<h2><span class="header-section-number">2.3</span> API request</h2>
+<p>Now that we have established our distance matrix and that we are able to plot it onto a map, the next step consist in calling an API and request the travel time between the different points of our distance matrix for specific conditions. In our case, we want to compute the travel time for every combination of latitude longitude couple with the same starting point. Each <span class="math inline">\((start, stop)\)</span> pair is defined as follows.</p>
+<p><span class="math display">\[
+(Start, Stop)_i = (Lat, Long)_{start} \to (Lat, Long)_{stop_i} \ \forall \ i \in grid \tag{1}
+\]</span>
+We used the API from the service distancematrix.ai and submitted our request for each <span class="math inline">\((start, stop)\)</span> pairs as a concatenated string along with other specifications as the transportation mode and the departure time. Each destination from the <em>url_dest</em> will be considered as a single request by the API. In our case, the extraction has already been done earlier in August 2024, so we won’t be running the following section which is displayed for demonstration purposes. Instead, we will load our previsouly formatted and saved datasets.</p>
+<pre class="python"><code># api key
+
+with open(&#39;api_key.txt&#39;, &#39;r&#39;) as file:
+    key = file.read()
+    
+# specifications for driving mode
+
+len(coords)
+orig_index = 44
+orig = coords.pop(orig_index)
+len(coords)
+orig_lat = str(orig[0])
+orig_long = str(orig[1])
+destinations = &quot;|&quot;.join([f&quot;{c[0]},{c[1]}&quot; for c in coords])
+mode = &quot;driving&quot;
+dtime = &quot;now&quot;
+
+# url specifications
+
+url_base = &quot;https://api.distancematrix.ai/maps/api/distancematrix/json&quot;
+url_orig = f&quot;origins={orig_lat},{orig_long}&quot;
+url_dest = f&quot;destinations={destinations}&quot;
+url_key = f&quot;key={key}&quot;
+url_mode = f&quot;mode={mode}&quot;
+url_dtime = f&quot;departure_time={dtime}&quot;
+url = f&quot;{url_base}?{url_orig}&amp;{url_dest}&amp;{url_mode}&amp;{url_dtime}&amp;{url_key}&quot;
+
+# submit request
+
+rtime = datetime.now()
+response = requests.get(url)
+data = json.loads(response.text)</code></pre>
+</div>
+<div id="data-wrangling" class="section level2" number="2.4">
+<h2><span class="header-section-number">2.4</span> Data wrangling</h2>
+<p>Once the data is extracted from the API and saved as JSON, we perform a few data wrangling operations in order to obtain a clean pandas data frame. The following section focuses on extracting the relevant information and stores it into tidy format with variables such as distance, duration, latitude, longitude, mode etc. For some of our requests, the API returned a failed output which is likely due to the fact that some of the latitude longitude couples from our distance matrix do not return a valid address for the API to work with. Those failed requests were removed from our dataset.</p>
+<pre class="python"><code># convert dict to data frame
+
+dlist = data[&quot;rows&quot;]
+dlist = dlist[0]
+dlist = dlist[&quot;elements&quot;]
+
+test = pd.DataFrame.from_dict(dlist)
+
+def extract(cell):
+    if not isinstance(cell, dict):
+        return cell
+    return cell[&#39;value&#39;]
+
+test = test.map(extract, na_action=&#39;ignore&#39;)
+
+# cleaning and formatting
+
+test[[&#39;orig_lat&#39;, &#39;orig_long&#39;]] = test[&#39;origin&#39;].str.split(&#39;,&#39;, n=1, expand=True)
+test[[&#39;dest_lat&#39;, &#39;dest_long&#39;]] = test[&#39;destination&#39;].str.split(&#39;,&#39;, n=1, expand=True)
+
+test = test[test[&quot;status&quot;] == &quot;OK&quot;]
+
+test = test.drop(&quot;origin&quot;, axis=1)
+test = test.drop(&quot;destination&quot;, axis=1)
+
+test[&quot;distance_km&quot;] = test[&quot;distance&quot;] / 1E3
+test[&quot;duration_min&quot;] = test[&quot;duration&quot;] / 60
+
+test[&quot;mode&quot;] = &quot;driving&quot;
+test[&quot;exe_time&quot;] = rtime
+
+test = test.dropna()
+
+# save as csv
+
+test.to_csv(&#39;extract.csv&#39;, index=False)</code></pre>
+<p>Our formatted datasets can be loaded and displayed into our environment (c.f. Table 2.2).</p>
+<pre class="python"><code>
+# load the saved datasets
+
+bike = &quot;20240808_bicycling_df.csv&quot;
+car = &quot;20240808_driving_df.csv&quot;
+
+bike_df = pd.read_csv(f&quot;{path}/{bike}&quot;)
+car_df = pd.read_csv(f&quot;{path}/{car}&quot;)
+
+# concatenation
+
+df = pd.concat([bike_df, car_df])</code></pre>
+<pre class="r"><code># in R: print table
+
+disp &lt;- head(py$df) %&gt;%
+  select(distance_km, duration_min, orig_lat, orig_long, dest_lat, dest_long, mode)
+
+knitr::kable(disp, 
+             format = &quot;html&quot;,
+             row.names = FALSE,
+             caption = &quot;Results from the API&quot;) %&gt;%
+  kable_classic(full_width = F,
+                position = &quot;center&quot;,
+                font_size = 14,
+                lightable_options = &quot;basic&quot;,
+                html_font = &quot;sans-serif&quot;)</code></pre>
+<table class=" lightable-classic" style="font-size: 14px; font-family: sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption style="font-size: initial !important;">
+<span id="tab:unnamed-chunk-13">Table 2.2: </span>Results from the API
+</caption>
+<thead>
+<tr>
+<th style="text-align:right;">
+distance_km
+</th>
+<th style="text-align:right;">
+duration_min
+</th>
+<th style="text-align:right;">
+orig_lat
+</th>
+<th style="text-align:right;">
+orig_long
+</th>
+<th style="text-align:right;">
+dest_lat
+</th>
+<th style="text-align:right;">
+dest_long
+</th>
+<th style="text-align:left;">
+mode
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+14.916
+</td>
+<td style="text-align:right;">
+49.73333
+</td>
+<td style="text-align:right;">
+50.83019
+</td>
+<td style="text-align:right;">
+4.349422
+</td>
+<td style="text-align:right;">
+50.7614
+</td>
+<td style="text-align:right;">
+4.236645
+</td>
+<td style="text-align:left;">
+bicycling
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+12.052
+</td>
+<td style="text-align:right;">
+40.30000
+</td>
+<td style="text-align:right;">
+50.83019
+</td>
+<td style="text-align:right;">
+4.349422
+</td>
+<td style="text-align:right;">
+50.7614
+</td>
+<td style="text-align:right;">
+4.264839
+</td>
+<td style="text-align:left;">
+bicycling
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+12.082
+</td>
+<td style="text-align:right;">
+39.13333
+</td>
+<td style="text-align:right;">
+50.83019
+</td>
+<td style="text-align:right;">
+4.349422
+</td>
+<td style="text-align:right;">
+50.7614
+</td>
+<td style="text-align:right;">
+4.293034
+</td>
+<td style="text-align:left;">
+bicycling
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+8.962
+</td>
+<td style="text-align:right;">
+35.26667
+</td>
+<td style="text-align:right;">
+50.83019
+</td>
+<td style="text-align:right;">
+4.349422
+</td>
+<td style="text-align:right;">
+50.7614
+</td>
+<td style="text-align:right;">
+4.321228
+</td>
+<td style="text-align:left;">
+bicycling
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+9.787
+</td>
+<td style="text-align:right;">
+42.00000
+</td>
+<td style="text-align:right;">
+50.83019
+</td>
+<td style="text-align:right;">
+4.349422
+</td>
+<td style="text-align:right;">
+50.7614
+</td>
+<td style="text-align:right;">
+4.349422
+</td>
+<td style="text-align:left;">
+bicycling
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+10.752
+</td>
+<td style="text-align:right;">
+39.11667
+</td>
+<td style="text-align:right;">
+50.83019
+</td>
+<td style="text-align:right;">
+4.349422
+</td>
+<td style="text-align:right;">
+50.7614
+</td>
+<td style="text-align:right;">
+4.377617
+</td>
+<td style="text-align:left;">
+bicycling
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="results" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> Results</h1>
+<div id="descriptive-maps" class="section level2" number="3.1">
+<h2><span class="header-section-number">3.1</span> Descriptive Maps</h2>
+<p>As the previous map in figure 2.1, we need the same structure to plot those extracted data. We need (i) a first layer that will be used as a frame to plot our points (ii) a region layer to see the municipality borders of the city (iii) the API dataset which contains the duration for each start stop pairs. We used the <span class="math inline">\(contourf\)</span> function which allows to display a color value of a variable z for each x, y pairs. This is a convenient 2D option to a 3D problem since we do not need to add another axis. In our case the x, y pairs will be our destination latitude longitude couple from our distance matrix and the z values will be the duration extracted from the API.</p>
+<pre class="python"><code>
+# just like magic
+
+warnings.filterwarnings(&#39;ignore&#39;)
+
+# fixed color scale
+
+levels = ticker.MaxNLocator(nbins=10).tick_values(min(df[&quot;duration_min&quot;]), max(df[&quot;duration_min&quot;]))
+cmap = plt.colormaps[&#39;Blues&#39;]
+norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
+
+# Define the function
+
+def mapthis(df, mode):
+  
+    # clear plot
+    
+    plt.clf()
+
+    # extract x, y, z as numpy arrays
+    
+    x, y = df[&quot;dest_long&quot;].values, df[&quot;dest_lat&quot;].values
+    z = df[&quot;duration_min&quot;].values
+
+    # create map
+    
+    fig, ax = plt.subplots(figsize=(10, 8))  # Control figure size
+
+    map = Basemap(
+        projection=&#39;aeqd&#39;,
+        
+        lat_0=np.median(y),  # Map center (latitude)
+        lon_0=np.median(x),  # Map center (longitude)
+        
+        llcrnrlat=min(y),  # Lower-left latitude
+        urcrnrlat=max(y),  # Upper-right latitude
+        llcrnrlon=min(x),  # Lower-left longitude
+        urcrnrlon=max(x),  # Upper-right longitude
+        
+        resolution=&#39;i&#39;,
+        ax=ax
+    )
+
+    # Map shapefile
+    
+    map.readshapefile(f&quot;{path}/gadm41_BEL_shp/gadm41_BEL_4&quot;, name=&quot;shp0&quot;)
+
+    # Map aesthetics
+    
+    map.drawmapboundary(fill_color=&#39;aqua&#39;)
+    map.drawcoastlines(linewidth=0.5)
+    map.fillcontinents(color=&#39;white&#39;, lake_color=&#39;aqua&#39;)
+    
+    # Map contour plot
+    
+    x_map, y_map = map(x, y)  # Convert lat/lon to map projection coordinates
+    isochr = map.contourf(
+        x_map, y_map, z,
+        tri=True, cmap=cmap, norm=norm, latlon=False
+    )
+    fig.colorbar(isochr, label=&quot;Duration (minutes)&quot;)
+
+    # Add parallels and meridians
+    
+    lat_min, lat_max = min(y), max(y)
+    lon_min, lon_max = min(x), max(x)
+    lat_interval = (lat_max - lat_min) / 5
+    lon_interval = (lon_max - lon_min) / 4
+
+    parallels = np.arange(lat_min, lat_max + lat_interval, lat_interval)
+    meridians = np.arange(lon_min, lon_max + lon_interval, lon_interval)
+
+    map.drawparallels(parallels, labels=[1, 0, 0, 0], linewidth=0.5, color=&#39;gray&#39;, fontsize=8)
+    map.drawmeridians(meridians, labels=[0, 0, 0, 1], linewidth=0.5, color=&#39;gray&#39;, fontsize=8)
+
+    # Labels for longitude and latitude axes
+    
+    plt.xlabel(&quot;Longitude&quot;, labelpad=15)
+    plt.ylabel(&quot;Latitude&quot;, labelpad=50)
+    plt.title(f&quot;Brussels Isochrones Map: by {mode}&quot;)
+
+    # Show plot
+    
+    plt.show()
+    plt.close()</code></pre>
+<pre class="python"><code># call the function
+
+mapthis(bike_df, &quot;bike&quot;)</code></pre>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-15"></span>
+<img src="distance_matrix_api_files/figure-html/unnamed-chunk-15-1.png" alt="Brussels isochrone maps by bike" width="960" />
+<p class="caption">
+Figure 3.1: Brussels isochrone maps by bike
+</p>
+</div>
+<pre class="python"><code># call the function
+
+mapthis(car_df, &quot;car&quot;)</code></pre>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-16"></span>
+<img src="distance_matrix_api_files/figure-html/unnamed-chunk-16-3.png" alt="Brussels isochrone maps by car" width="960" />
+<p class="caption">
+Figure 3.2: Brussels isochrone maps by car
+</p>
+</div>
+</div>
+<div id="transport-efficiency" class="section level2" number="3.2">
+<h2><span class="header-section-number">3.2</span> Transport efficiency</h2>
+<p>The first clear observation we can make when looking at those two maps is that traveling by car seems more time efficient than travelling by car for the same destination since the color code seems lower for the car facet. However, an important element we need to point out is that for the same geographical destinations, the routes will be different depending on the transportation mode as the API focuses on selecting the most time efficient path. In order to illustrate that feature, here is a plot that shows the distances by bike and car compared to a 1:1 line (c.f. Figure 3.3).</p>
+<pre class="python"><code># transpose the datasets
+
+bike_df_ = bike_df[[&quot;distance_km&quot;, &quot;duration_min&quot;, &quot;dest_lat&quot;, &quot;dest_long&quot;, &quot;orig_lat&quot;, &quot;orig_long&quot;]]
+bike_df_ = bike_df_.rename(columns={&quot;distance_km&quot;: &quot;b_distance_km&quot;, &quot;duration_min&quot;: &quot;b_duration_min&quot;})
+car_df_ = car_df[[&quot;distance_km&quot;, &quot;duration_min&quot;, &quot;dest_lat&quot;, &quot;dest_long&quot;]]
+car_df_ = car_df_.rename(columns={&quot;distance_km&quot;: &quot;c_distance_km&quot;, &quot;duration_min&quot;: &quot;c_duration_min&quot;})
+df_1 = pd.merge(bike_df_, car_df_, on=(&quot;dest_lat&quot;, &quot;dest_long&quot;), how=&#39;inner&#39;)
+
+# plot the 1:1 line
+
+max_dist = max(df[&quot;distance_km&quot;])
+line = [0, max_dist]
+
+plt.clf()
+plt.figure(figsize=(10,8))
+plt.plot(df_1[&quot;b_distance_km&quot;], df_1[&quot;c_distance_km&quot;], &quot;.b&quot;)
+plt.plot(line, line, &quot;--b&quot;)
+plt.ylabel(&quot;Car travel distance (km)&quot;)
+plt.xlabel(&quot;Bike travel distance (km)&quot;)
+plt.show()</code></pre>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-17"></span>
+<img src="distance_matrix_api_files/figure-html/unnamed-chunk-17-5.png" alt="1:1 travel distances" width="960" />
+<p class="caption">
+Figure 3.3: 1:1 travel distances
+</p>
+</div>
+<pre class="python"><code>plt.close()</code></pre>
+<p>Most points don’t fall on the 1:1 line, confirming the routes selected by the API are chosen based on time efficiency. Hence, we cannot use a model that takes the rough travel distance into account with the purpose of finding the optimum time for a specified destination. We should focus on the optimum time required to reach a specific destination.</p>
+</div>
+<div id="loss-functions" class="section level2" number="3.3">
+<h2><span class="header-section-number">3.3</span> Loss functions</h2>
+<p>Instead, we can also compare the differences of time efficiency in terms of time and speed loss for every coordinate. This will allow a more appealing comparison between the two means of transportation, without relying on heavy processing. We define the loss functions as follows.</p>
+<p>time loss function:</p>
+<p><span class="math display">\[
+Loss\ Time_{Lat, Long} = \left(\frac{duration\ by\ bike}{duration\ by\ car}\right)_{Lat, Long} \tag{2}
+\]</span></p>
+<p>Speed loss function:</p>
+<p><span class="math display">\[
+Loss\ Speed_{Lat, Long} = \left(\frac{(distance/duration)\ by\ bike}{(distance/duration)\ by\ car}\right)_{Lat, Long} \tag{3}
+\]</span></p>
+<div id="time-loss" class="section level3" number="3.3.1">
+<h3><span class="header-section-number">3.3.1</span> Time loss</h3>
+<pre class="python"><code># time loss
+
+df_1[&quot;time_loss&quot;] = df_1[&quot;b_duration_min&quot;]/df_1[&quot;c_duration_min&quot;]
+
+# fixed color scale
+
+levels = ticker.MaxNLocator(nbins=10).tick_values(min(df_1[&quot;time_loss&quot;]), max(df_1[&quot;time_loss&quot;]))
+cmap = plt.colormaps[&#39;RdPu&#39;]
+norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
+
+# clear plot
+
+plt.clf()
+
+# extract x, y, z as numpy arrays
+
+x, y = df_1[&quot;dest_long&quot;].values, df_1[&quot;dest_lat&quot;].values
+z = df_1[&quot;time_loss&quot;].values
+
+# create map
+
+fig, ax = plt.subplots(figsize=(10, 8))  # Control figure size
+
+map = Basemap(
+    projection=&#39;aeqd&#39;,
+    
+    lat_0=np.median(y),  # Map center (latitude)
+    lon_0=np.median(x),  # Map center (longitude)
+    
+    llcrnrlat=min(y),  # Lower-left latitude
+    urcrnrlat=max(y),  # Upper-right latitude
+    llcrnrlon=min(x),  # Lower-left longitude
+    urcrnrlon=max(x),  # Upper-right longitude
+    
+    resolution=&#39;i&#39;,
+    ax=ax
+)
+
+# Map shapefile
+
+map.readshapefile(f&quot;{path}/gadm41_BEL_shp/gadm41_BEL_4&quot;, name=&quot;shp0&quot;)
+
+# Map aesthetics
+
+map.drawmapboundary(fill_color=&#39;aqua&#39;)
+map.drawcoastlines(linewidth=0.5)
+map.fillcontinents(color=&#39;white&#39;, lake_color=&#39;aqua&#39;)
+
+# Map contour plot
+
+x_map, y_map = map(x, y)  # Convert lat/lon to map projection coordinates
+isochr = map.contourf(
+    x_map, y_map, z,
+    tri=True, cmap=cmap, norm=norm, latlon=False
+)
+fig.colorbar(isochr, label=&quot;Time loss&quot;)</code></pre>
+<pre class="python"><code># Add parallels and meridians
+
+lat_min, lat_max = min(y), max(y)
+lon_min, lon_max = min(x), max(x)
+lat_interval = (lat_max - lat_min) / 5
+lon_interval = (lon_max - lon_min) / 4
+
+parallels = np.arange(lat_min, lat_max + lat_interval, lat_interval)
+meridians = np.arange(lon_min, lon_max + lon_interval, lon_interval)
+
+map.drawparallels(parallels, labels=[1, 0, 0, 0], linewidth=0.5, color=&#39;gray&#39;, fontsize=8)</code></pre>
+<pre class="python"><code>map.drawmeridians(meridians, labels=[0, 0, 0, 1], linewidth=0.5, color=&#39;gray&#39;, fontsize=8)</code></pre>
+<pre class="python"><code># Labels for longitude and latitude axes
+
+plt.xlabel(&quot;Longitude&quot;, labelpad=15)
+plt.ylabel(&quot;Latitude&quot;, labelpad=50)
+
+# Show plot
+
+plt.show()</code></pre>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-18"></span>
+<img src="distance_matrix_api_files/figure-html/unnamed-chunk-18-7.png" alt="Isochrone time loss map" width="960" />
+<p class="caption">
+Figure 3.4: Isochrone time loss map
+</p>
+</div>
+<pre class="python"><code>plt.close()</code></pre>
+</div>
+<div id="speed-loss" class="section level3" number="3.3.2">
+<h3><span class="header-section-number">3.3.2</span> Speed loss</h3>
+<pre class="python"><code># speed loss
+
+df_1[&quot;speed_loss&quot;] = (df_1[&quot;b_distance_km&quot;]/df_1[&quot;b_duration_min&quot;])/(df_1[&quot;c_distance_km&quot;]/df_1[&quot;c_duration_min&quot;])
+
+# fixed color scale
+
+levels = ticker.MaxNLocator(nbins=10).tick_values(min(df_1[&quot;speed_loss&quot;]), max(df_1[&quot;speed_loss&quot;]))
+cmap = plt.colormaps[&#39;RdPu&#39;]
+norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
+
+# clear plot
+
+plt.clf()
+
+# extract x, y, z as numpy arrays
+
+x, y = df_1[&quot;dest_long&quot;].values, df_1[&quot;dest_lat&quot;].values
+z = df_1[&quot;speed_loss&quot;].values
+
+# create map
+
+fig, ax = plt.subplots(figsize=(10, 8))  # Control figure size
+
+map = Basemap(
+    projection=&#39;aeqd&#39;,
+    
+    lat_0=np.median(y),  # Map center (latitude)
+    lon_0=np.median(x),  # Map center (longitude)
+    
+    llcrnrlat=min(y),  # Lower-left latitude
+    urcrnrlat=max(y),  # Upper-right latitude
+    llcrnrlon=min(x),  # Lower-left longitude
+    urcrnrlon=max(x),  # Upper-right longitude
+    
+    resolution=&#39;i&#39;,
+    ax=ax
+)
+
+# Map shapefile
+
+map.readshapefile(f&quot;{path}/gadm41_BEL_shp/gadm41_BEL_4&quot;, name=&quot;shp0&quot;)
+
+# Map aesthetics
+
+map.drawmapboundary(fill_color=&#39;aqua&#39;)
+map.drawcoastlines(linewidth=0.5)
+map.fillcontinents(color=&#39;white&#39;, lake_color=&#39;aqua&#39;)
+
+# Map contour plot
+
+x_map, y_map = map(x, y)  # Convert lat/lon to map projection coordinates
+isochr = map.contourf(
+    x_map, y_map, z,
+    tri=True, cmap=cmap, norm=norm, latlon=False
+)
+fig.colorbar(isochr, label=&quot;Speed loss&quot;)</code></pre>
+<pre class="python"><code># Add parallels and meridians
+
+lat_min, lat_max = min(y), max(y)
+lon_min, lon_max = min(x), max(x)
+lat_interval = (lat_max - lat_min) / 5
+lon_interval = (lon_max - lon_min) / 4
+
+parallels = np.arange(lat_min, lat_max + lat_interval, lat_interval)
+meridians = np.arange(lon_min, lon_max + lon_interval, lon_interval)
+
+map.drawparallels(parallels, labels=[1, 0, 0, 0], linewidth=0.5, color=&#39;gray&#39;, fontsize=8)</code></pre>
+<pre class="python"><code>map.drawmeridians(meridians, labels=[0, 0, 0, 1], linewidth=0.5, color=&#39;gray&#39;, fontsize=8)</code></pre>
+<pre class="python"><code># Labels for longitude and latitude axes
+
+plt.xlabel(&quot;Longitude&quot;, labelpad=15)
+plt.ylabel(&quot;Latitude&quot;, labelpad=50)
+
+# Show plot
+
+plt.show()</code></pre>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:unnamed-chunk-19"></span>
+<img src="distance_matrix_api_files/figure-html/unnamed-chunk-19-9.png" alt="Isochrone speed loss map" width="960" />
+<p class="caption">
+Figure 3.5: Isochrone speed loss map
+</p>
+</div>
+<pre class="python"><code>plt.close()</code></pre>
+</div>
+</div>
+</div>
+<div id="conclusions" class="section level1" number="4">
+<h1><span class="header-section-number">4</span> Conclusions</h1>
+<ul>
+<li><p>The isochrone maps created and especially the time and speed loss maps appear to be some quite useful visual aid for finding the path of optimum time efficiency when comparing the transportation modes for a specific destination.</p></li>
+<li><p>An interesting addition for a next iteration of that project would be to produce a dynamic map in a Shiny or Dash application that provide a direct map-based API request for any starting point selected by the user.</p></li>
+<li><p>Another addition for a next version would be to focus on a more in-depth interpretation of the API results.</p></li>
+</ul>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("show" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
